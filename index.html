@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
+  <title>Project S - Task Manager</title>
+  <link rel="stylesheet" href="css/styles.css?v=3">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand">Project&nbsp;<span>S</span></div>
+    <div class="conn-dot" id="connDot" title="Connection status"></div>
+  </header>
+
+  <main>
+    <!-- Dashboard view -->
+    <section id="view-dashboard" class="view active">
+      <div class="dash-hero">
+        <div class="dash-total" id="dashTotal">0</div>
+        <div class="dash-total-label">Total Tasks</div>
+      </div>
+      <div id="statusCards" class="status-cards"></div>
+      <div class="card-block">
+        <h3 class="block-title">Status Distribution</h3>
+        <div id="statusBars" class="status-bars"></div>
+      </div>
+    </section>
+
+    <!-- Tasks view -->
+    <section id="view-tasks" class="view">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M16.5 10.5a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="searchInput" type="search" placeholder="Search tasks, PIC, organisation..." autocomplete="off">
+        </div>
+        <button id="filterToggle" class="filter-toggle" title="Filter by status">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Filter</span>
+        </button>
+      </div>
+      <div id="filterChips" class="chips hidden"></div>
+      <div id="demoBanner" class="banner hidden"></div>
+      <div id="taskList" class="task-list"></div>
+      <div id="emptyState" class="empty-state hidden">
+        <p>No tasks found.</p>
+        <p class="empty-sub">Tap + to add a new task.</p>
+      </div>
+    </section>
+
+    <!-- Organizations view -->
+    <section id="view-organizations" class="view">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M16.5 10.5a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="orgSearch" type="search" placeholder="Search organisations..." autocomplete="off">
+        </div>
+        <button id="addOrgBtn" class="btn btn-primary btn-inline">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          <span>Add</span>
+        </button>
+      </div>
+      <div id="orgList" class="org-list"></div>
+      <div id="orgEmpty" class="empty-state hidden">
+        <p>No organisations yet.</p>
+        <p class="empty-sub">Tap Add to create one.</p>
+      </div>
+    </section>
+
+    <!-- Settings view -->
+    <section id="view-settings" class="view">
+      <div class="card-block">
+        <h3 class="block-title">Google Sheets Connection</h3>
+
+        <label class="field-label" for="sheetUrl">Spreadsheet URL (live read)</label>
+        <input id="sheetUrl" type="url" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off">
+
+        <label class="field-label" for="apiUrl">Apps Script Web App URL (add / edit / delete)</label>
+        <input id="apiUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+
+        <div class="btn-row">
+          <button id="testBtn" class="btn btn-primary">Test Connection</button>
+          <button id="saveBtn" class="btn btn-secondary">Save</button>
+        </div>
+        <div id="connStatus" class="conn-status"></div>
+      </div>
+
+      <div class="card-block">
+        <h3 class="block-title">About</h3>
+        <p class="muted" id="aboutText"></p>
+      </div>
+
+      <div class="card-block">
+        <h3 class="block-title">Setup Guide</h3>
+        <ol class="setup-steps">
+          <li><b>Spreadsheet URL</b>: pasted above, gives live (view-only) data from your sheet.</li>
+          <li>To add / edit / delete: open your Google Sheet &gt; <b>Extensions &gt; Apps Script</b>.</li>
+          <li>Replace the default code with <code>appsscript/Code.gs</code> and save.</li>
+          <li><b>Deploy &gt; New deployment &gt; Web app</b>.</li>
+          <li>Execute as <b>Me</b>, access <b>Anyone</b>, then Deploy.</li>
+          <li>Copy the <code>/exec</code> URL into the Apps Script field and tap <b>Test Connection</b>.</li>
+          <li>Purpose / PIC / Status options load from the sheet's live dropdowns.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="dashboard">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-item" data-view="tasks">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+      <span>Tasks</span>
+    </button>
+    <button class="nav-item" data-view="organizations">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 21V4h10v3h6v14h-9m0 0h9M8 8h2m-2 4h2m-2 4h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Organizations</span>
+    </button>
+    <button class="nav-item" data-view="settings">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Floating action button -->
+  <button id="fab" class="fab" title="Add task">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+  </button>
+
+  <!-- Task form modal -->
+  <div id="taskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <h2 id="formTitle">Add Task</h2>
+        <button class="icon-btn" data-close="taskModal">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="fNo">No</label>
+            <input id="fNo" type="text" readonly>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fTaskID">Task-ID</label>
+            <input id="fTaskID" type="text" disabled>
+            <span class="field-hint">Auto-filled by sheet formula</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fDate">Date *</label>
+            <input id="fDate" type="date" required>
+            <span class="field-hint" id="fDateHint"></span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fDue">Due Date</label>
+            <input id="fDue" type="date">
+            <span class="field-hint" id="fDueHint"></span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fPurpose">Purpose *</label>
+            <select id="fPurpose" required></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fPIC">PIC *</label>
+            <select id="fPIC" required></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fOrg">Organisation</label>
+            <input id="fOrg" list="orgDatalist" placeholder="Type to search..." autocomplete="off">
+            <datalist id="orgDatalist"></datalist>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fValue">Value</label>
+            <input id="fValue" type="text" inputmode="decimal" class="num-input" placeholder="0">
+          </div>
+          <div class="field">
+            <label class="field-label" for="fStatus">Status *</label>
+            <select id="fStatus" required></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="fDuration">Duration</label>
+            <input id="fDuration" type="text" placeholder="e.g. 45 days left">
+          </div>
+          <div class="field field-wide">
+            <label class="field-label" for="fTask">Task name *</label>
+            <textarea id="fTask" rows="2" placeholder="Describe the task..." required></textarea>
+          </div>
+          <div class="field field-wide">
+            <label class="field-label" for="fNote">Note</label>
+            <textarea id="fNote" rows="2" placeholder="Additional notes..."></textarea>
+          </div>
+          <div class="field field-wide">
+            <label class="check-label">
+              <input type="checkbox" id="fInternal">
+              <span>Internal</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" data-close="taskModal">Cancel</button>
+        <button id="formSubmit" class="btn btn-primary">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div id="confirmModal" class="modal" role="alertdialog" aria-modal="true">
+    <div class="modal-sheet modal-small">
+      <div class="modal-head"><h2 id="confirmTitle">Delete</h2></div>
+      <div class="modal-body">
+        <p id="confirmText">Are you sure you want to delete this item? This cannot be undone.</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" data-close="confirmModal">Cancel</button>
+        <button id="confirmDelete" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Organization add/edit modal -->
+  <div id="orgModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="orgFormTitle">
+    <div class="modal-sheet modal-small">
+      <div class="modal-head">
+        <h2 id="orgFormTitle">Add Organization</h2>
+        <button class="icon-btn" data-close="orgModal">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field-label" for="fOrgName">Name *</label>
+        <input id="fOrgName" type="text" placeholder="Organization name" autocomplete="off">
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" data-close="orgModal">Cancel</button>
+        <button id="orgFormSubmit" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/api.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
+</body>
+</html>
