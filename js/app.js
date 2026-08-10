@@ -1,5 +1,7 @@
 /* Project S - application logic. */
 (function () {
+  var LS_PWD = 'projects_s_pwd';
+
   var App = {
     state: {
       tasks: [],
@@ -8,8 +10,10 @@
       organizations: [],
       currentView: 'dashboard',
       filter: 'All',
+      internalFilter: 'all',
       search: '',
-      editingRow: null
+      editingRow: null,
+      settingsLocked: false
     },
 
     els: {},
@@ -48,6 +52,7 @@
         searchInput: document.getElementById('searchInput'),
         filterToggle: document.getElementById('filterToggle'),
         filterChips: document.getElementById('filterChips'),
+        internalFilter: document.getElementById('internalFilter'),
         taskList: document.getElementById('taskList'),
         emptyState: document.getElementById('emptyState'),
         demoBanner: document.getElementById('demoBanner'),
@@ -60,6 +65,19 @@
         testBtn: document.getElementById('testBtn'),
         saveBtn: document.getElementById('saveBtn'),
         connStatus: document.getElementById('connStatus'),
+        secNoPwd: document.getElementById('secNoPwd'),
+        secLocked: document.getElementById('secLocked'),
+        secUnlocked: document.getElementById('secUnlocked'),
+        newPwd: document.getElementById('newPwd'),
+        confirmPwd: document.getElementById('confirmPwd'),
+        setPwdBtn: document.getElementById('setPwdBtn'),
+        unlockPwd: document.getElementById('unlockPwd'),
+        unlockBtn: document.getElementById('unlockBtn'),
+        lockBtn: document.getElementById('lockBtn'),
+        oldPwd: document.getElementById('oldPwd'),
+        newPwd2: document.getElementById('newPwd2'),
+        confirmPwd2: document.getElementById('confirmPwd2'),
+        changePwdBtn: document.getElementById('changePwdBtn'),
         aboutText: document.getElementById('aboutText'),
         fab: document.getElementById('fab'),
         taskModal: document.getElementById('taskModal'),
@@ -91,9 +109,17 @@
       };
 
       ProjectS.loadConfig();
-      this.els.sheetUrl.value = ProjectS.getSheetUrl();
-      this.els.apiUrl.value = ProjectS.getBaseUrl();
+      this.state.settingsLocked = !!localStorage.getItem(LS_PWD);
+      if (this.state.settingsLocked) {
+        this.els.sheetUrl.value = '';
+        this.els.apiUrl.value = '';
+      } else {
+        this.els.sheetUrl.value = ProjectS.getSheetUrl();
+        this.els.apiUrl.value = ProjectS.getBaseUrl();
+      }
       this.bindEvents();
+      this.applySecurityState();
+      this.renderInternalFilter();
 
       this.refresh();
     },
@@ -120,6 +146,22 @@
 
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
       this.els.testBtn.addEventListener('click', function () { self.testConnection(); });
+
+      this.els.setPwdBtn.addEventListener('click', function () { self.setPassword(); });
+      this.els.unlockBtn.addEventListener('click', function () { self.unlockSettings(); });
+      this.els.lockBtn.addEventListener('click', function () { self.lockSettings(); });
+      this.els.changePwdBtn.addEventListener('click', function () { self.changePassword(); });
+      this.els.unlockPwd.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') self.unlockSettings();
+      });
+
+      this.els.internalFilter.querySelectorAll('.chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          self.state.internalFilter = chip.getAttribute('data-internal');
+          self.renderInternalFilter();
+          self.renderTasks();
+        });
+      });
 
       this.els.orgSearch.addEventListener('input', function () { self.renderOrganizations(); });
       this.els.addOrgBtn.addEventListener('click', function () { self.openOrgForm(); });
@@ -341,6 +383,13 @@
       });
     },
 
+    renderInternalFilter: function () {
+      var self = this;
+      this.els.internalFilter.querySelectorAll('.chip').forEach(function (chip) {
+        chip.classList.toggle('active', chip.getAttribute('data-internal') === self.state.internalFilter);
+      });
+    },
+
     renderChips: function () {
       var self = this;
       var counts = this.statusCounts();
@@ -371,10 +420,13 @@
 
     renderTasks: function () {
       this.renderChips();
+      this.renderInternalFilter();
 
       var self = this;
       var filtered = this.state.tasks.filter(function (t) {
         if (self.state.filter !== 'All' && String(t.Status || '').trim() !== self.state.filter) return false;
+        if (self.state.internalFilter === 'internal' && !t.Internal) return false;
+        if (self.state.internalFilter === 'external' && t.Internal) return false;
         if (!self.state.search) return true;
         var hay = [t['Task name'], t['Task-ID'], t.Date, t['Due Date'], t.Purpose, t.PIC, t.Organization, t.Status, t.Note]
           .join(' ').toLowerCase();
@@ -778,6 +830,109 @@
         }
         self.setConnDot();
         self.refresh();
+      });
+    },
+
+    /* ---------------- security ---------------- */
+
+    hashPassword: function (pwd) {
+      if (window.crypto && window.crypto.subtle) {
+        return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode('ps_' + pwd))
+          .then(function (buf) {
+            return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+              return ('0' + b.toString(16)).slice(-2);
+            }).join('');
+          });
+      }
+      var h = 5381;
+      var s = 'ps_' + pwd;
+      for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+      return Promise.resolve('djb2_' + h.toString(16));
+    },
+
+    applySecurityState: function () {
+      var hasPwd = !!localStorage.getItem(LS_PWD);
+      var locked = hasPwd && this.state.settingsLocked;
+      this.els.secNoPwd.classList.toggle('hidden', hasPwd);
+      this.els.secLocked.classList.toggle('hidden', !hasPwd || !locked);
+      this.els.secUnlocked.classList.toggle('hidden', !hasPwd || locked);
+      this.els.sheetUrl.disabled = locked;
+      this.els.apiUrl.disabled = locked;
+      this.els.testBtn.disabled = locked;
+      this.els.saveBtn.disabled = locked;
+      this.els.sheetUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://docs.google.com/spreadsheets/d/...';
+      this.els.apiUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://script.google.com/macros/s/.../exec';
+    },
+
+    setPassword: function () {
+      var self = this;
+      var p = this.els.newPwd.value;
+      var c = this.els.confirmPwd.value;
+      if (!p) { this.toast('Enter a password.', true); return; }
+      if (p.length < 4) { this.toast('Password must be at least 4 characters.', true); return; }
+      if (p !== c) { this.toast('Passwords do not match.', true); return; }
+      this.hashPassword(p).then(function (hash) {
+        localStorage.setItem(LS_PWD, hash);
+        self.els.newPwd.value = '';
+        self.els.confirmPwd.value = '';
+        self.state.settingsLocked = true;
+        self.els.sheetUrl.value = '';
+        self.els.apiUrl.value = '';
+        self.els.connStatus.textContent = '';
+        self.els.connStatus.className = 'conn-status';
+        self.applySecurityState();
+        self.toast('Password set - settings locked.', false, true);
+      });
+    },
+
+    unlockSettings: function () {
+      var self = this;
+      var p = this.els.unlockPwd.value;
+      if (!p) { this.toast('Enter the password.', true); return; }
+      this.hashPassword(p).then(function (hash) {
+        if (hash !== localStorage.getItem(LS_PWD)) {
+          self.toast('Incorrect password.', true);
+          return;
+        }
+        self.els.unlockPwd.value = '';
+        self.state.settingsLocked = false;
+        self.els.sheetUrl.value = ProjectS.getSheetUrl();
+        self.els.apiUrl.value = ProjectS.getBaseUrl();
+        self.applySecurityState();
+        self.toast('Unlocked.', false, true);
+      });
+    },
+
+    lockSettings: function () {
+      this.state.settingsLocked = true;
+      this.els.sheetUrl.value = '';
+      this.els.apiUrl.value = '';
+      this.els.connStatus.textContent = '';
+      this.els.connStatus.className = 'conn-status';
+      this.applySecurityState();
+      this.toast('Settings locked.', false, true);
+    },
+
+    changePassword: function () {
+      var self = this;
+      var old = this.els.oldPwd.value;
+      var np = this.els.newPwd2.value;
+      var cp = this.els.confirmPwd2.value;
+      if (!old) { this.toast('Enter your current password.', true); return; }
+      if (!np || np.length < 4) { this.toast('New password must be at least 4 characters.', true); return; }
+      if (np !== cp) { this.toast('New passwords do not match.', true); return; }
+      this.hashPassword(old).then(function (oldHash) {
+        if (oldHash !== localStorage.getItem(LS_PWD)) {
+          self.toast('Current password is incorrect.', true);
+          return;
+        }
+        self.hashPassword(np).then(function (newHash) {
+          localStorage.setItem(LS_PWD, newHash);
+          self.els.oldPwd.value = '';
+          self.els.newPwd2.value = '';
+          self.els.confirmPwd2.value = '';
+          self.toast('Password changed.', false, true);
+        });
       });
     },
 
