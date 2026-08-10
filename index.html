@@ -6,8 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=3">
+  <link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
 
@@ -145,10 +144,6 @@
       <div class="modal-body">
         <div class="form-grid">
           <div class="field">
-            <label class="field-label" for="fNo">No</label>
-            <input id="fNo" type="text" readonly>
-          </div>
-          <div class="field">
             <label class="field-label" for="fTaskID">Task-ID</label>
             <input id="fTaskID" type="text" disabled>
             <span class="field-hint">Auto-filled by sheet formula</span>
@@ -173,8 +168,7 @@
           </div>
           <div class="field">
             <label class="field-label" for="fOrg">Organisation</label>
-            <input id="fOrg" list="orgDatalist" placeholder="Type to search..." autocomplete="off">
-            <datalist id="orgDatalist"></datalist>
+            <select id="fOrg"></select>
           </div>
           <div class="field">
             <label class="field-label" for="fValue">Value</label>
@@ -186,7 +180,8 @@
           </div>
           <div class="field">
             <label class="field-label" for="fDuration">Duration</label>
-            <input id="fDuration" type="text" placeholder="e.g. 45 days left">
+            <input id="fDuration" type="text" readonly>
+            <span class="field-hint">Auto-filled by sheet formula</span>
           </div>
           <div class="field field-wide">
             <label class="field-label" for="fTask">Task name *</label>
@@ -247,7 +242,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/api.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/api.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>
