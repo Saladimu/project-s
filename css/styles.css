@@ -74,6 +74,7 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
 
 .view { display: none; }
 .view.active { display: block; }
+#view-dashboard { padding-bottom: 112px; }
 
 /* ---------- Dashboard ---------- */
 .dash-hero {
@@ -207,6 +208,21 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
   -webkit-overflow-scrolling: touch;
 }
 .chips.hidden { display: none; }
+
+.internal-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.if-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
 .chip {
   flex-shrink: 0;
   border: 1px solid var(--line);
