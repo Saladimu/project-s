@@ -283,6 +283,9 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
   white-space: nowrap;
 }
 .meta-tag svg { width: 11px; height: 11px; flex-shrink: 0; }
+.meta-tag.duration { font-weight: 700; }
+.meta-tag.duration.overdue { color: var(--danger); background: #fef2f2; border-color: #fecaca; }
+.meta-tag.duration.ok { color: var(--brand-2); background: #eff6ff; border-color: #bfdbfe; }
 
 .badge {
   display: inline-block;
