@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
-  <link rel="stylesheet" href="css/styles.css?v=5">
+  <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
 
@@ -81,22 +81,13 @@
         <h3 class="block-title">Security</h3>
         <p class="muted">Protect the sensitive connection links with a password.</p>
 
-        <div id="secNoPwd">
-          <label class="field-label" for="newPwd">Set password</label>
-          <input id="newPwd" type="password" autocomplete="new-password" placeholder="New password">
-          <input id="confirmPwd" type="password" autocomplete="new-password" placeholder="Confirm password">
-          <div class="btn-row">
-            <button id="setPwdBtn" class="btn btn-primary">Set Password</button>
-          </div>
-        </div>
-
         <div id="secLocked" class="hidden">
           <label class="field-label" for="unlockPwd">Password</label>
-          <input id="unlockPwd" type="password" autocomplete="current-password" placeholder="Enter password to view links">
+          <input id="unlockPwd" type="password" autocomplete="current-password" placeholder="Enter password (default: 00000)">
           <div class="btn-row">
             <button id="unlockBtn" class="btn btn-primary">Unlock</button>
           </div>
-          <p class="muted">The connection links below are hidden until you enter the correct password.</p>
+          <p class="muted">The connection links below are hidden until you enter the correct password (default: 00000).</p>
         </div>
 
         <div id="secUnlocked" class="hidden">
@@ -285,7 +276,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/api.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/api.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>

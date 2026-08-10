@@ -74,8 +74,9 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Dashboard colours** - status cards/bars are colour-coded; `Hold` renders brown and `Urgent`
   renders red.
 - **Note / Internal** - full support for the remaining task columns.
-- **Security** - Settings can be protected with a password (stored as a hash) so the sensitive
-  Spreadsheet / Apps Script links are hidden behind an unlock prompt.
+- **Security** - Settings are locked by default with a **default password `00000`**; the
+  Spreadsheet / Apps Script links stay hidden until unlocked. Use the "Lock Settings" section
+  to change the password (stored as a hash).
 
 Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 
