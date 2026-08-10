@@ -252,6 +252,7 @@ var ProjectS = (function () {
   function parseGviz(text) {
     var s = String(text || '').trim();
     s = s.replace(/^\/\*O_o\*\//, '');
+    s = s.trim();
     s = s.replace(/^google\.visualization\.Query\.setResponse\(/, '');
     s = s.replace(/\);\s*$/, '');
     var data = JSON.parse(s);

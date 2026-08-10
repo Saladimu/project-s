@@ -20,6 +20,8 @@
       'in-progress':  { bg: '#fffbeb', fg: '#b45309', bar: '#f59e0b', card: '#f59e0b' },
       'in progress':  { bg: '#fffbeb', fg: '#b45309', bar: '#f59e0b', card: '#f59e0b' },
       'on hold':      { bg: '#f5f3ff', fg: '#6d28d9', bar: '#8b5cf6', card: '#8b5cf6' },
+      'hold':         { bg: '#f9f3ee', fg: '#6b3a1f', bar: '#8b5e3c', card: '#8b5e3c' },
+      'urgent':       { bg: '#fef2f2', fg: '#b91c1c', bar: '#dc2626', card: '#dc2626' },
       'done':         { bg: '#ecfdf5', fg: '#047857', bar: '#10b981', card: '#10b981' },
       'completed':    { bg: '#ecfdf5', fg: '#047857', bar: '#10b981', card: '#10b981' },
       'cancelled':    { bg: '#fef2f2', fg: '#b91c1c', bar: '#ef4444', card: '#ef4444' },
@@ -66,7 +68,6 @@
         formSubmit: document.getElementById('formSubmit'),
         confirmDelete: document.getElementById('confirmDelete'),
         confirmText: document.getElementById('confirmText'),
-        fNo: document.getElementById('fNo'),
         fTaskID: document.getElementById('fTaskID'),
         fDate: document.getElementById('fDate'),
         fDue: document.getElementById('fDue'),
@@ -75,7 +76,6 @@
         fPurpose: document.getElementById('fPurpose'),
         fPIC: document.getElementById('fPIC'),
         fOrg: document.getElementById('fOrg'),
-        orgDatalist: document.getElementById('orgDatalist'),
         fValue: document.getElementById('fValue'),
         fStatus: document.getElementById('fStatus'),
         fDuration: document.getElementById('fDuration'),
@@ -216,10 +216,7 @@
       this.fillSelect(this.els.fPurpose, this.state.options.purpose, '-- Select Purpose --');
       this.fillSelect(this.els.fPIC, this.state.options.pic, '-- Select PIC --');
       this.fillSelect(this.els.fStatus, this.state.options.status, '-- Select Status --');
-      var self = this;
-      this.els.orgDatalist.innerHTML = this.organizationNames()
-        .map(function (o) { return '<option value="' + escapeHtml(o) + '"></option>'; })
-        .join('');
+      this.fillSelect(this.els.fOrg, this.organizationNames(), '-- Select Organization --');
     },
 
     fillSelect: function (select, items, placeholder) {
@@ -409,6 +406,7 @@
       var dueDate = t['Due Date'] ? '<span class="due-date' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue ' : '') + this.fmtDate(t['Due Date']) + '</span>' : '';
       var note = t.Note ? metaTag('note', t.Note) : '';
       var internal = t.Internal ? metaTag('internal', 'Internal') : '';
+      var duration = t.Duration ? durationTag(t.Duration) : '';
 
       return '<div class="task-card" style="--sc:' + c.card + '">' +
         '<div class="task-main">' +
@@ -425,7 +423,7 @@
           metaTag('user', t.PIC) +
           metaTag('org', t.Organization) +
           metaTag('tag', t.Purpose) +
-          note + internal +
+          duration + note + internal +
         '</div>' +
         '<div class="task-actions">' +
           '<button class="row-btn edit" data-row="' + t.row + '">' + svgIcon('pencil') + 'Edit</button>' +
@@ -620,7 +618,6 @@
       var task = row ? this.state.tasks.find(function (t) { return t.row === row; }) : null;
 
       if (task) {
-        this.els.fNo.value = task['No'] !== '' ? String(task['No']) : '';
         this.els.fTaskID.value = task['Task-ID'] || '';
         this.els.fDate.value = task.Date || '';
         this.els.fDue.value = task['Due Date'] || '';
@@ -659,12 +656,6 @@
     },
 
     autoId: function () {
-      var maxNo = 0;
-      this.state.tasks.forEach(function (t) {
-        var n = Number(t['No']);
-        if (!isNaN(n) && n > maxNo) maxNo = n;
-      });
-      this.els.fNo.value = String(maxNo + 1);
       this.els.fTaskID.value = '';
     },
 
@@ -684,7 +675,6 @@
       }
 
       var fields = {
-        'No': this.parseValue(this.els.fNo.value),
         'Date': date,
         'Due Date': this.els.fDue.value,
         'Purpose': purpose,
@@ -696,16 +686,6 @@
         'Internal': this.els.fInternal.checked,
         'Status': status
       };
-
-      var duration = this.els.fDuration.value.trim();
-      if (this.state.editingRow) {
-        var original = this.state.tasks.find(function (t) { return t.row === self.state.editingRow; });
-        if (duration !== String((original && original.Duration) || '')) {
-          fields['Duration'] = duration;
-        }
-      } else if (duration) {
-        fields['Duration'] = duration;
-      }
 
       var params = this.state.editingRow
         ? { action: 'update', row: this.state.editingRow, fields: fields }
@@ -841,6 +821,14 @@
     };
     return '<span class="meta-tag"><svg class="icon" viewBox="0 0 24 24">' +
       (icons[kind] || '') + '</svg>' + escapeHtml(value) + '</span>';
+  }
+
+  function durationTag(value) {
+    var isOverdue = String(value).toLowerCase().indexOf('overdue') !== -1;
+    var icon = '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+    return '<span class="meta-tag duration ' + (isOverdue ? 'overdue' : 'ok') + '">' +
+      '<svg class="icon" viewBox="0 0 24 24">' + icon + '</svg>' +
+      escapeHtml(value) + '</span>';
   }
 
   function svgIcon(name) {
