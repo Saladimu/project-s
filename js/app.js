@@ -1,6 +1,7 @@
 /* Project S - application logic. */
 (function () {
   var LS_PWD = 'projects_s_pwd';
+  var DEFAULT_PWD = '00000';
 
   var App = {
     state: {
@@ -65,12 +66,8 @@
         testBtn: document.getElementById('testBtn'),
         saveBtn: document.getElementById('saveBtn'),
         connStatus: document.getElementById('connStatus'),
-        secNoPwd: document.getElementById('secNoPwd'),
         secLocked: document.getElementById('secLocked'),
         secUnlocked: document.getElementById('secUnlocked'),
-        newPwd: document.getElementById('newPwd'),
-        confirmPwd: document.getElementById('confirmPwd'),
-        setPwdBtn: document.getElementById('setPwdBtn'),
         unlockPwd: document.getElementById('unlockPwd'),
         unlockBtn: document.getElementById('unlockBtn'),
         lockBtn: document.getElementById('lockBtn'),
@@ -109,14 +106,9 @@
       };
 
       ProjectS.loadConfig();
-      this.state.settingsLocked = !!localStorage.getItem(LS_PWD);
-      if (this.state.settingsLocked) {
-        this.els.sheetUrl.value = '';
-        this.els.apiUrl.value = '';
-      } else {
-        this.els.sheetUrl.value = ProjectS.getSheetUrl();
-        this.els.apiUrl.value = ProjectS.getBaseUrl();
-      }
+      this.state.settingsLocked = true;
+      this.els.sheetUrl.value = '';
+      this.els.apiUrl.value = '';
       this.bindEvents();
       this.applySecurityState();
       this.renderInternalFilter();
@@ -147,7 +139,6 @@
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
       this.els.testBtn.addEventListener('click', function () { self.testConnection(); });
 
-      this.els.setPwdBtn.addEventListener('click', function () { self.setPassword(); });
       this.els.unlockBtn.addEventListener('click', function () { self.unlockSettings(); });
       this.els.lockBtn.addEventListener('click', function () { self.lockSettings(); });
       this.els.changePwdBtn.addEventListener('click', function () { self.changePassword(); });
@@ -851,11 +842,9 @@
     },
 
     applySecurityState: function () {
-      var hasPwd = !!localStorage.getItem(LS_PWD);
-      var locked = hasPwd && this.state.settingsLocked;
-      this.els.secNoPwd.classList.toggle('hidden', hasPwd);
-      this.els.secLocked.classList.toggle('hidden', !hasPwd || !locked);
-      this.els.secUnlocked.classList.toggle('hidden', !hasPwd || locked);
+      var locked = this.state.settingsLocked;
+      this.els.secLocked.classList.toggle('hidden', !locked);
+      this.els.secUnlocked.classList.toggle('hidden', locked);
       this.els.sheetUrl.disabled = locked;
       this.els.apiUrl.disabled = locked;
       this.els.testBtn.disabled = locked;
@@ -864,24 +853,11 @@
       this.els.apiUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://script.google.com/macros/s/.../exec';
     },
 
-    setPassword: function () {
+    checkPassword: function (pwd) {
       var self = this;
-      var p = this.els.newPwd.value;
-      var c = this.els.confirmPwd.value;
-      if (!p) { this.toast('Enter a password.', true); return; }
-      if (p.length < 4) { this.toast('Password must be at least 4 characters.', true); return; }
-      if (p !== c) { this.toast('Passwords do not match.', true); return; }
-      this.hashPassword(p).then(function (hash) {
-        localStorage.setItem(LS_PWD, hash);
-        self.els.newPwd.value = '';
-        self.els.confirmPwd.value = '';
-        self.state.settingsLocked = true;
-        self.els.sheetUrl.value = '';
-        self.els.apiUrl.value = '';
-        self.els.connStatus.textContent = '';
-        self.els.connStatus.className = 'conn-status';
-        self.applySecurityState();
-        self.toast('Password set - settings locked.', false, true);
+      var stored = localStorage.getItem(LS_PWD);
+      return this.hashPassword(pwd).then(function (hash) {
+        return stored ? hash === stored : pwd === DEFAULT_PWD;
       });
     },
 
@@ -889,11 +865,8 @@
       var self = this;
       var p = this.els.unlockPwd.value;
       if (!p) { this.toast('Enter the password.', true); return; }
-      this.hashPassword(p).then(function (hash) {
-        if (hash !== localStorage.getItem(LS_PWD)) {
-          self.toast('Incorrect password.', true);
-          return;
-        }
+      this.checkPassword(p).then(function (ok) {
+        if (!ok) { self.toast('Incorrect password.', true); return; }
         self.els.unlockPwd.value = '';
         self.state.settingsLocked = false;
         self.els.sheetUrl.value = ProjectS.getSheetUrl();
@@ -921,11 +894,8 @@
       if (!old) { this.toast('Enter your current password.', true); return; }
       if (!np || np.length < 4) { this.toast('New password must be at least 4 characters.', true); return; }
       if (np !== cp) { this.toast('New passwords do not match.', true); return; }
-      this.hashPassword(old).then(function (oldHash) {
-        if (oldHash !== localStorage.getItem(LS_PWD)) {
-          self.toast('Current password is incorrect.', true);
-          return;
-        }
+      this.checkPassword(old).then(function (ok) {
+        if (!ok) { self.toast('Current password is incorrect.', true); return; }
         self.hashPassword(np).then(function (newHash) {
           localStorage.setItem(LS_PWD, newHash);
           self.els.oldPwd.value = '';
