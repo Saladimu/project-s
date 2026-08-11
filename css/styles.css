@@ -44,10 +44,23 @@ body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 18px;
   background: var(--brand);
   color: #fff;
   box-shadow: var(--shadow);
+}
+
+.logo {
+  height: 32px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .brand {
