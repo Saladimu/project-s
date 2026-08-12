@@ -97,6 +97,14 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Security** - Settings are locked by default with a **default password `00000`**; the
   Spreadsheet / Apps Script links stay hidden until unlocked. Use the "Lock Settings" section
   to change the password (stored as a hash).
+- **Database (Settings)** - backup / restore / wipe for the TaskList sheet:
+  - **Backup** duplicates the task sheet as `TaskBAK-dd-mm-yy` (today's date). If that backup
+    name already exists you get an alert with the option to continue (overwrite).
+  - **Restore** lists all `TaskBAK-dd-mm-yy` sheets to choose from (or shows "No backup TaskList"
+    when none exist). Restoring first backs up the current TaskList (alerting if today's backup
+    already exists), then renames the chosen backup to become the new TaskList.
+  - **Wipe All Data** shows a continue/cancel alert, backs up the current TaskList, then clears
+    all data rows (from A2 to the end of the data range).
 
 Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 
@@ -116,6 +124,10 @@ The Apps Script exposes these actions (JSON):
 | `addOrg` | POST | `{ action, name }` |
 | `updateOrg` | POST | `{ action, row, name }` |
 | `deleteOrg` | POST | `{ action, row }` |
+| `backup` | POST | `{ action, force? }` |
+| `listBackups` | GET | - |
+| `restore` | POST | `{ action, name, force? }` |
+| `wipe` | POST | `{ action, force? }` |
 
 Organisation records are `{ row, No, Name }` so maintenance can address exact sheet rows.
 

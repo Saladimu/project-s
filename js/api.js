@@ -26,7 +26,8 @@ var ProjectS = (function () {
     tasks: [],
     columns: [],
     options: { purpose: [], pic: [], status: [] },
-    organizations: []
+    organizations: [],
+    backups: []
   };
 
   /* ---------------- demo data (mirrors the live sheet) ---------------- */
@@ -115,6 +116,38 @@ var ProjectS = (function () {
             break;
           case 'deleteOrg':
             state.organizations = state.organizations.filter(function (o) { return o.row !== Number(params.row); });
+            break;
+          case 'backup':
+            var bakName = demoBackupName();
+            if (state.backups.indexOf(bakName) !== -1 && !params.force) {
+              result = { ok: true, needConfirm: true, backup: bakName };
+              break;
+            }
+            if (state.backups.indexOf(bakName) === -1) state.backups.push(bakName);
+            result = { ok: true, backup: bakName };
+            break;
+          case 'listBackups':
+            result = { ok: true, backups: state.backups.slice().sort().reverse() };
+            break;
+          case 'restore':
+            var chosenName = String(params.name || '').trim();
+            var bakName2 = demoBackupName();
+            if (state.backups.indexOf(bakName2) !== -1 && !params.force) {
+              result = { ok: true, needConfirm: true, backup: bakName2 };
+              break;
+            }
+            if (state.backups.indexOf(bakName2) === -1) state.backups.push(bakName2);
+            result = { ok: true, restored: chosenName, backup: bakName2 };
+            break;
+          case 'wipe':
+            var bakName3 = demoBackupName();
+            if (state.backups.indexOf(bakName3) !== -1 && !params.force) {
+              result = { ok: true, needConfirm: true, backup: bakName3 };
+              break;
+            }
+            if (state.backups.indexOf(bakName3) === -1) state.backups.push(bakName3);
+            state.tasks = [];
+            result = { ok: true, backup: bakName3 };
             break;
           case 'ping':
             result.message = 'Demo backend responding.';
@@ -353,6 +386,14 @@ var ProjectS = (function () {
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function pad3(n) { return (n < 100 ? (n < 10 ? '00' : '0') : '') + n; }
+
+  function demoBackupName() {
+    var now = new Date();
+    var dd = pad2(now.getDate());
+    var mm = pad2(now.getMonth() + 1);
+    var yy = String(now.getFullYear()).slice(-2);
+    return 'TaskBAK-' + dd + '-' + mm + '-' + yy;
+  }
 
   seedDemo();
 

@@ -72,6 +72,14 @@
         testBtn: document.getElementById('testBtn'),
         saveBtn: document.getElementById('saveBtn'),
         connStatus: document.getElementById('connStatus'),
+        backupBtn: document.getElementById('backupBtn'),
+        restoreBtn: document.getElementById('restoreBtn'),
+        wipeBtn: document.getElementById('wipeBtn'),
+        dbStatus: document.getElementById('dbStatus'),
+        restoreModal: document.getElementById('restoreModal'),
+        restoreHint: document.getElementById('restoreHint'),
+        backupList: document.getElementById('backupList'),
+        backupEmpty: document.getElementById('backupEmpty'),
         secLocked: document.getElementById('secLocked'),
         secUnlocked: document.getElementById('secUnlocked'),
         unlockPwd: document.getElementById('unlockPwd'),
@@ -149,6 +157,10 @@
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
       this.els.testBtn.addEventListener('click', function () { self.testConnection(); });
 
+      this.els.backupBtn.addEventListener('click', function () { self.backupTaskList(); });
+      this.els.restoreBtn.addEventListener('click', function () { self.openRestore(); });
+      this.els.wipeBtn.addEventListener('click', function () { self.wipeTaskList(); });
+
       this.els.refreshBtn.addEventListener('click', function () {
         self.manualRefresh();
       });
@@ -189,6 +201,10 @@
       });
       this.els.confirmModal.addEventListener('click', function (e) {
         if (e.target === self.els.confirmModal) self.closeModal('confirmModal');
+      });
+
+      this.els.restoreModal.addEventListener('click', function (e) {
+        if (e.target === self.els.restoreModal) self.closeModal('restoreModal');
       });
 
       this.els.formSubmit.addEventListener('click', function () { self.saveTask(); });
@@ -884,8 +900,24 @@
     },
 
     confirmDeleteAction: function () {
+      if (this.state.confirmAction) {
+        var action = this.state.confirmAction;
+        this.state.confirmAction = null;
+        this.els.confirmDelete.textContent = 'Delete';
+        this.closeModal('confirmModal');
+        action();
+        return;
+      }
       if (this.state.deleteKind === 'org') return this.doDeleteOrg();
       return this.doDelete();
+    },
+
+    askConfirm: function (title, text, action, btnLabel) {
+      this.state.confirmAction = action;
+      this.els.confirmTitle.textContent = title;
+      this.els.confirmText.textContent = text;
+      this.els.confirmDelete.textContent = btnLabel || 'Delete';
+      this.openModal('confirmModal');
     },
 
     doDelete: function () {
@@ -941,6 +973,126 @@
         }
         self.setConnDot();
         self.refresh();
+      });
+    },
+
+    /* ---------------- database (backup / restore / wipe) ---------------- */
+
+    setDbStatus: function (msg, isErr) {
+      this.els.dbStatus.textContent = msg || '';
+      this.els.dbStatus.className = 'conn-status' + (isErr ? ' err' : (msg ? ' ok' : ''));
+    },
+
+    backupTaskList: function (force) {
+      var self = this;
+      this.setDbStatus('Backing up...');
+      ProjectS.call('backup', { action: 'backup', force: !!force }, 'POST').then(function (res) {
+        if (!res.ok) { self.setDbStatus(res.error || 'Backup failed', true); return; }
+        if (res.needConfirm) {
+          self.setDbStatus('');
+          self.askConfirm(
+            'Backup already exists',
+            'A backup named "' + res.backup + '" already exists for today. Continue and overwrite it?',
+            function () { self.backupTaskList(true); },
+            'Overwrite'
+          );
+          return;
+        }
+        self.setDbStatus('Backup created: ' + res.backup + '.');
+        self.toast('Backup created', false, true);
+      });
+    },
+
+    openRestore: function () {
+      var self = this;
+      this.els.backupList.innerHTML = '';
+      this.els.backupEmpty.classList.add('hidden');
+      this.els.restoreHint.classList.remove('hidden');
+      this.openModal('restoreModal');
+      ProjectS.call('listBackups', { action: 'listBackups' }, 'GET').then(function (res) {
+        if (!res.ok) {
+          self.els.restoreHint.classList.add('hidden');
+          self.els.backupList.innerHTML = '<p class="muted">' + escapeHtml(res.error || 'Failed to load backups.') + '</p>';
+          return;
+        }
+        var backups = res.backups || [];
+        self.els.backupEmpty.classList.toggle('hidden', backups.length > 0);
+        self.els.restoreHint.classList.toggle('hidden', backups.length === 0);
+        self.els.backupList.innerHTML = backups.map(function (name) {
+          return '<button class="backup-item" data-name="' + escapeHtml(name) + '">' +
+            '<span class="backup-icon">' + svgIcon('backup') + '</span>' +
+            '<span class="backup-name">' + escapeHtml(name) + '</span>' +
+            '<span class="backup-go">' + svgIcon('arrow') + '</span>' +
+            '</button>';
+        }).join('');
+
+        self.els.backupList.querySelectorAll('.backup-item').forEach(function (item) {
+          item.addEventListener('click', function () {
+            self.confirmRestore(item.getAttribute('data-name'));
+          });
+        });
+      });
+    },
+
+    confirmRestore: function (name) {
+      var self = this;
+      this.closeModal('restoreModal');
+      this.askConfirm(
+        'Restore backup',
+        'Restore "' + name + '"? The current TaskList will be backed up first before restoring.',
+        function () { self.restoreTaskList(name, false); },
+        'Restore'
+      );
+    },
+
+    restoreTaskList: function (name, force) {
+      var self = this;
+      this.setDbStatus('Restoring...');
+      ProjectS.call('restore', { action: 'restore', name: name, force: !!force }, 'POST').then(function (res) {
+        if (!res.ok) { self.setDbStatus(res.error || 'Restore failed', true); return; }
+        if (res.needConfirm) {
+          self.setDbStatus('');
+          self.askConfirm(
+            'Backup already exists',
+            'A backup named "' + res.backup + '" already exists for today. Continue and overwrite it?',
+            function () { self.restoreTaskList(name, true); },
+            'Overwrite'
+          );
+          return;
+        }
+        self.setDbStatus('Restored "' + res.restored + '". A backup of the old data was saved as "' + res.backup + '".');
+        self.toast('Restore complete', false, true);
+        self.refresh(true);
+      });
+    },
+
+    wipeTaskList: function (force) {
+      var self = this;
+      if (!force) {
+        this.askConfirm(
+          'Wipe all data',
+          'This will back up the current TaskList, then delete ALL task data from the sheet. Continue?',
+          function () { self.wipeTaskList(true); },
+          'Wipe'
+        );
+        return;
+      }
+      this.setDbStatus('Wiping data...');
+      ProjectS.call('wipe', { action: 'wipe', force: true }, 'POST').then(function (res) {
+        if (!res.ok) { self.setDbStatus(res.error || 'Wipe failed', true); return; }
+        if (res.needConfirm) {
+          self.setDbStatus('');
+          self.askConfirm(
+            'Backup already exists',
+            'A backup named "' + res.backup + '" already exists for today. Continue and overwrite it?',
+            function () { self.wipeTaskList(true); },
+            'Overwrite'
+          );
+          return;
+        }
+        self.setDbStatus('All data wiped. Backup saved as "' + res.backup + '".');
+        self.toast('All data wiped', false, true);
+        self.refresh(true);
       });
     },
 
@@ -1089,7 +1241,9 @@
   function svgIcon(name) {
     var paths = {
       pencil: '<path d="M16.9 4.1l3 3L8 19H5v-3L16.9 4.1zM14 6l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
-      trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      backup: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      arrow: '<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     };
     return '<svg class="icon" viewBox="0 0 24 24">' + (paths[name] || '') + '</svg>';
   }

@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=12">
+  <link rel="stylesheet" href="css/styles.css?v=14">
 </head>
 <body>
 
@@ -148,6 +148,20 @@
           <button id="saveBtn" class="btn btn-secondary">Save</button>
         </div>
         <div id="connStatus" class="conn-status"></div>
+      </div>
+
+      <div class="card-block db-block">
+        <h3 class="block-title">Database</h3>
+        <p class="muted">Back up, restore or wipe the TaskList sheet.</p>
+
+        <div class="btn-row">
+          <button id="backupBtn" class="btn btn-primary">Backup TaskList</button>
+          <button id="restoreBtn" class="btn btn-secondary">Restore</button>
+        </div>
+        <div class="btn-row">
+          <button id="wipeBtn" class="btn btn-danger">Wipe All Data</button>
+        </div>
+        <div id="dbStatus" class="conn-status"></div>
       </div>
 
       <div class="card-block">
@@ -303,10 +317,33 @@
     </div>
   </div>
 
+  <!-- Restore backup modal -->
+  <div id="restoreModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
+    <div class="modal-sheet modal-small">
+      <div class="modal-head">
+        <h2 id="restoreTitle">Restore Backup</h2>
+        <button class="icon-btn" data-close="restoreModal">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="muted" id="restoreHint">Choose a backup to restore. The current TaskList will be backed up first.</p>
+        <div id="backupList" class="backup-list"></div>
+        <div id="backupEmpty" class="empty-state hidden">
+          <p>No backup TaskList</p>
+          <p class="empty-sub">Create a backup first.</p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" data-close="restoreModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
-  <script src="js/api.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/api.js?v=13"></script>
+  <script src="js/app.js?v=13"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

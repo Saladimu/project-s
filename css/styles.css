@@ -723,6 +723,34 @@ input[readonly] { background: #f8fafc; color: var(--muted); }
 .org-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .org-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
+/* ---------- Database / backup list ---------- */
+.db-block { background: #eef2f6; }
+.db-block .btn-secondary { background: #ffffff; }
+.db-block .btn-danger { background: #dc2626; }
+.backup-list { display: flex; flex-direction: column; gap: 8px; }
+.backup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+.backup-item:hover { background: #f8fafc; border-color: var(--primary); }
+.backup-item:active { background: #eff6ff; }
+.backup-item .backup-icon { color: var(--primary); flex-shrink: 0; }
+.backup-item .backup-icon .icon { width: 18px; height: 18px; }
+.backup-item .backup-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.backup-item .backup-go { color: var(--muted); flex-shrink: 0; }
+.backup-item .backup-go .icon { width: 16px; height: 16px; }
+
 /* ---------- Small screens ---------- */
 @media (min-width: 480px) {
   .status-cards { grid-template-columns: repeat(3, 1fr); }

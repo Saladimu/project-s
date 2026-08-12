@@ -96,6 +96,18 @@ function route_(action, params) {
     case 'deleteOrg':
       return deleteOrg_(params);
 
+    case 'backup':
+      return backupTaskList_(params);
+
+    case 'listBackups':
+      return listBackups_();
+
+    case 'restore':
+      return restoreTaskList_(params);
+
+    case 'wipe':
+      return wipeTaskList_(params);
+
     case 'ping':
       return { ok: true, message: 'Project S backend is online.', sheet: getTaskSheet_().getName() };
 
@@ -207,7 +219,8 @@ function getDropdown_(sheet, headerName) {
   var headers = getHeaders_(sheet);
   var idx = headers.indexOf(headerName);
   if (idx === -1) return [];
-  var lastRow = Math.min(sheet.getLastRow(), CONFIG.HEADER_ROW + 500);
+  var lastRow = Math.max(sheet.getLastRow(), CONFIG.HEADER_ROW + 1);
+  lastRow = Math.min(lastRow, CONFIG.HEADER_ROW + 500);
   for (var r = CONFIG.HEADER_ROW + 1; r <= lastRow; r++) {
     var dv = sheet.getRange(r, idx + 1).getDataValidation();
     if (dv) {
@@ -386,4 +399,132 @@ function deleteTask_(params) {
   if (!rowNum || rowNum <= CONFIG.HEADER_ROW) throw new Error('Invalid row number');
   sheet.deleteRow(rowNum);
   return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Backup / Restore / Wipe                                            */
+/* ------------------------------------------------------------------ */
+
+var BACKUP_PREFIX = 'TaskBAK-';
+var BACKUP_RE = /^TaskBAK-\d{2}-\d{2}-\d{2}$/;
+
+function backupSheetName_() {
+  var now = new Date();
+  var dd = ('0' + now.getDate()).slice(-2);
+  var mm = ('0' + (now.getMonth() + 1)).slice(-2);
+  var yy = String(now.getFullYear()).slice(-2);
+  return BACKUP_PREFIX + dd + '-' + mm + '-' + yy;
+}
+
+function isBackupSheetName_(name) {
+  return BACKUP_RE.test(String(name || '').trim());
+}
+
+/** Returns the exact name of the sheet the app treats as TaskList. */
+function getTaskSheetName_() {
+  var sheet = getTaskSheet_();
+  return sheet.getName();
+}
+
+function backupTaskList_(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var src = getTaskSheet_();
+  var name = backupSheetName_();
+  var exists = ss.getSheetByName(name) !== null;
+  if (exists && !params.force) {
+    return { ok: true, needConfirm: true, backup: name, sheet: src.getName() };
+  }
+  if (exists) {
+    ss.deleteSheet(ss.getSheetByName(name));
+  }
+  src.copyTo(ss).setName(name);
+  return { ok: true, backup: name, sheet: src.getName() };
+}
+
+function listBackups_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var names = [];
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    if (isBackupSheetName_(sheets[i].getName())) names.push(sheets[i].getName());
+  }
+  names.sort();
+  names.reverse();
+  return { ok: true, backups: names };
+}
+
+function restoreTaskList_(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var chosen = String(params.name || '').trim();
+  if (!chosen) throw new Error('Backup name is required');
+  var backupSheet = ss.getSheetByName(chosen);
+  if (!backupSheet) throw new Error('Backup not found: ' + chosen);
+  if (!isBackupSheetName_(chosen)) throw new Error('Invalid backup name: ' + chosen);
+
+  var targetName = getTaskSheetName_();
+  var current = ss.getSheetByName(targetName);
+
+  // Step 1: back up the current TaskList (alert if today's backup exists).
+  var bakName = backupSheetName_();
+  var exists = ss.getSheetByName(bakName) !== null;
+  if (exists && !params.force) {
+    return { ok: true, needConfirm: true, backup: bakName, sheet: targetName, restore: chosen };
+  }
+  if (exists) {
+    ss.deleteSheet(ss.getSheetByName(bakName));
+  }
+  // Move the current TaskList aside (rename) to today's backup name.
+  current.setName(bakName);
+
+  // Step 2: rename the chosen backup to become the new TaskList.
+  backupSheet.setName(targetName);
+
+  return { ok: true, backup: bakName, restored: chosen, sheet: targetName };
+}
+
+function wipeTaskList_(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = getTaskSheet_();
+
+  // Capture the current dropdown values so they survive the wipe.
+  var purposeVals = getDropdown_(sheet, 'Purpose');
+  var picVals = getDropdown_(sheet, 'PIC');
+  var statusVals = getDropdown_(sheet, 'Status');
+
+  // Back up first (alert if today's backup exists).
+  var bakName = backupSheetName_();
+  var exists = ss.getSheetByName(bakName) !== null;
+  if (exists && !params.force) {
+    return { ok: true, needConfirm: true, backup: bakName, sheet: sheet.getName() };
+  }
+  if (exists) {
+    ss.deleteSheet(ss.getSheetByName(bakName));
+  }
+  sheet.copyTo(ss).setName(bakName);
+
+  // Delete all data rows: cells from A2 to the end of the data range.
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow > CONFIG.HEADER_ROW && lastCol >= 1) {
+    sheet.getRange(CONFIG.HEADER_ROW + 1, 1, lastRow - CONFIG.HEADER_ROW, lastCol).clearContent();
+  }
+
+  // Re-apply the dropdowns so Purpose / PIC / Status stay populated after the wipe.
+  setDropdown_(sheet, 'Purpose', purposeVals);
+  setDropdown_(sheet, 'PIC', picVals);
+  setDropdown_(sheet, 'Status', statusVals);
+
+  return { ok: true, backup: bakName, sheet: sheet.getName() };
+}
+
+function setDropdown_(sheet, headerName, values) {
+  if (!values || !values.length) return;
+  var headers = getHeaders_(sheet);
+  var idx = headers.indexOf(headerName);
+  if (idx === -1) return;
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(values, true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(CONFIG.HEADER_ROW + 1, idx + 1, 500).setDataValidation(rule);
 }
