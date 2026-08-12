@@ -49,6 +49,7 @@
       this.els = {
         connDot: document.getElementById('connDot'),
         dashTotal: document.getElementById('dashTotal'),
+        dashAmount: document.getElementById('dashAmount'),
         statusCards: document.getElementById('statusCards'),
         statusBars: document.getElementById('statusBars'),
         valueFilterToggle: document.getElementById('valueFilterToggle'),
@@ -352,6 +353,12 @@
       var sums = this.statusSums();
       var total = this.state.tasks.length;
       this.els.dashTotal.textContent = total.toLocaleString();
+      var totalAmount = 0;
+      this.state.tasks.forEach(function (t) {
+        var v = Number(t.Value);
+        if (!isNaN(v) && t.Value !== '' && t.Value !== null && t.Value !== undefined) totalAmount += v;
+      });
+      this.els.dashAmount.textContent = totalAmount.toLocaleString('en-US');
 
       var statusNames = this.state.options.status.length ? this.state.options.status.slice() : Object.keys(counts);
       var all = statusNames.concat(Object.keys(counts).filter(function (s) { return statusNames.indexOf(s) === -1; }));
@@ -491,6 +498,10 @@
         var hay = [t['Task name'], t['Task-ID'], t.Date, t['Due Date'], t.Purpose, t.PIC, t.Organization, t.Status, t.Note]
           .join(' ').toLowerCase();
         return hay.indexOf(self.state.search) !== -1;
+      });
+
+      filtered.sort(function (a, b) {
+        return (b.Date || '').localeCompare(a.Date || '');
       });
 
       this.els.emptyState.classList.toggle('hidden', filtered.length > 0);
