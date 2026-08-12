@@ -13,6 +13,7 @@
       filter: 'All',
       internalFilter: 'all',
       search: '',
+      valueFilter: { purpose: '', pic: '', organization: '' },
       editingRow: null,
       settingsLocked: false
     },
@@ -50,6 +51,9 @@
         dashTotal: document.getElementById('dashTotal'),
         statusCards: document.getElementById('statusCards'),
         statusBars: document.getElementById('statusBars'),
+        valueFilterToggle: document.getElementById('valueFilterToggle'),
+        valueFilterPanel: document.getElementById('valueFilterPanel'),
+        valueSum: document.getElementById('valueSum'),
         searchInput: document.getElementById('searchInput'),
         filterToggle: document.getElementById('filterToggle'),
         filterChips: document.getElementById('filterChips'),
@@ -134,6 +138,10 @@
 
       this.els.filterToggle.addEventListener('click', function () {
         self.els.filterChips.classList.toggle('hidden');
+      });
+
+      this.els.valueFilterToggle.addEventListener('click', function () {
+        self.els.valueFilterPanel.classList.toggle('hidden');
       });
 
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
@@ -372,6 +380,53 @@
           self.applyStatusFilter(row.getAttribute('data-status'));
         });
       });
+
+      this.renderValueFilter();
+    },
+
+    renderValueFilter: function () {
+      var self = this;
+      var dims = [
+        { key: 'purpose', label: 'Purpose', col: 'Purpose', opts: this.state.options.purpose.slice() },
+        { key: 'pic', label: 'PIC', col: 'PIC', opts: this.state.options.pic.slice() },
+        { key: 'organization', label: 'Organization', col: 'Organization', opts: this.organizationNames() }
+      ];
+
+      dims.forEach(function (d) {
+        var fromTasks = self.state.tasks.map(function (t) { return t[d.col]; }).filter(Boolean);
+        d.opts = unique(d.opts.concat(fromTasks));
+      });
+
+      this.els.valueFilterPanel.innerHTML = dims.map(function (d) {
+        var chips = ['<button class="chip' + (self.state.valueFilter[d.key] === '' ? ' active' : '') + '" data-dim="' + d.key + '" data-val="">All</button>'];
+        d.opts.forEach(function (o) {
+          chips.push('<button class="chip' + (self.state.valueFilter[d.key] === o ? ' active' : '') + '" data-dim="' + d.key + '" data-val="' + escapeHtml(o) + '">' + escapeHtml(o) + '</button>');
+        });
+        return '<div class="vf-row"><span class="vf-label">' + d.label + '</span><div class="chips vf-chips">' + chips.join('') + '</div></div>';
+      }).join('');
+
+      this.els.valueFilterPanel.querySelectorAll('.chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          self.state.valueFilter[chip.getAttribute('data-dim')] = chip.getAttribute('data-val');
+          self.renderValueFilter();
+          self.renderValueSum();
+        });
+      });
+
+      this.renderValueSum();
+    },
+
+    renderValueSum: function () {
+      var self = this;
+      var sum = 0;
+      this.state.tasks.forEach(function (t) {
+        if (self.state.valueFilter.purpose && String(t.Purpose || '') !== self.state.valueFilter.purpose) return;
+        if (self.state.valueFilter.pic && String(t.PIC || '') !== self.state.valueFilter.pic) return;
+        if (self.state.valueFilter.organization && String(t.Organization || '') !== self.state.valueFilter.organization) return;
+        var v = Number(t.Value);
+        if (!isNaN(v) && t.Value !== '' && t.Value !== null && t.Value !== undefined) sum += v;
+      });
+      this.els.valueSum.textContent = sum.toLocaleString('en-US');
     },
 
     renderInternalFilter: function () {
@@ -933,6 +988,16 @@
     return String(str === null || str === undefined ? '' : str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function unique(arr) {
+    var seen = {};
+    var out = [];
+    arr.forEach(function (v) {
+      var key = String(v || '');
+      if (key && !seen[key]) { seen[key] = true; out.push(v); }
+    });
+    return out;
   }
 
   function metaTag(kind, value) {

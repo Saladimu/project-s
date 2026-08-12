@@ -170,6 +170,37 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
 .sb-fill { height: 100%; border-radius: 999px; background: var(--sc, #94a3b8); transition: width 0.4s ease; }
 .sb-count { width: 34px; text-align: right; font-size: 12px; font-weight: 700; flex-shrink: 0; }
 
+/* ---------- Value filter ---------- */
+.value-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.value-filter-head .block-title { margin: 0; }
+.value-filter-panel { margin-bottom: 12px; }
+.value-filter-panel.hidden { display: none; }
+.vf-row { margin-bottom: 10px; }
+.vf-row:last-child { margin-bottom: 0; }
+.vf-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 5px;
+}
+.vf-chips { padding: 0; margin: 0; }
+.value-sum-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+.value-sum-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.value-sum { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
 /* ---------- Toolbar ---------- */
 .toolbar {
   display: flex;

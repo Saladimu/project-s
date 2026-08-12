@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=7">
+  <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body>
 
@@ -30,6 +30,20 @@
       <div class="card-block">
         <h3 class="block-title">Status Distribution</h3>
         <div id="statusBars" class="status-bars"></div>
+      </div>
+      <div class="card-block">
+        <div class="value-filter-head">
+          <h3 class="block-title">Value Filter</h3>
+          <button id="valueFilterToggle" class="filter-toggle" title="Filter by Purpose, PIC and Organization">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Filter</span>
+          </button>
+        </div>
+        <div id="valueFilterPanel" class="value-filter-panel hidden"></div>
+        <div class="value-sum-row">
+          <span class="value-sum-label">Total Value</span>
+          <span id="valueSum" class="value-sum">0</span>
+        </div>
       </div>
     </section>
 
@@ -280,7 +294,7 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/api.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/api.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>
