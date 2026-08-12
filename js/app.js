@@ -335,9 +335,21 @@
       return counts;
     },
 
+    statusSums: function () {
+      var sums = {};
+      this.state.tasks.forEach(function (t) {
+        var s = String(t.Status || '').trim() || 'Unassigned';
+        var v = Number(t.Value);
+        if (isNaN(v) || t.Value === '' || t.Value === null || t.Value === undefined) return;
+        sums[s] = (sums[s] || 0) + v;
+      });
+      return sums;
+    },
+
     renderDashboard: function () {
       var self = this;
       var counts = this.statusCounts();
+      var sums = this.statusSums();
       var total = this.state.tasks.length;
       this.els.dashTotal.textContent = total.toLocaleString();
 
@@ -348,8 +360,10 @@
       all.forEach(function (s) {
         var c = self.statusColor(s);
         var n = counts[s] || 0;
+        var sv = sums[s] || 0;
         cardsHtml += '<div class="status-card" data-status="' + escapeHtml(s) + '" style="--sc:' + c.card + '">' +
-          '<div class="sc-count">' + n.toLocaleString() + '</div>' +
+          '<div class="sc-top"><div class="sc-count">' + n.toLocaleString() + '</div>' +
+          '<div class="sc-value" style="color:' + c.fg + '">' + self.formatValue(sv) + '</div></div>' +
           '<div class="sc-label">' + escapeHtml(s) + '</div>' +
           '<div class="sc-go">Tap to view</div>' +
           '</div>';

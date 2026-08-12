@@ -119,10 +119,21 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
 }
 .status-card:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12); }
 .status-card .sc-count { font-size: 30px; font-weight: 800; line-height: 1; }
+.sc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .status-card .sc-label {
   font-size: 12px;
   color: var(--muted);
   margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-card .sc-value {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-decoration: underline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
