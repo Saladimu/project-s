@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=11">
+  <link rel="stylesheet" href="css/styles.css?v=12">
 </head>
 <body>
 
@@ -16,7 +16,12 @@
       <img class="logo" src="pro-s.jpg" alt="Project S logo">
       <div class="brand">Project&nbsp;<span>S</span></div>
     </div>
-    <div class="conn-dot" id="connDot" title="Connection status"></div>
+    <div class="header-actions">
+      <button id="refreshBtn" class="refresh-btn" title="Refresh data" aria-label="Refresh data">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="conn-dot" id="connDot" title="Connection status"></div>
+    </div>
   </header>
 
   <main>
@@ -300,7 +305,12 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="js/api.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/api.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+  </script>
 </body>
 </html>

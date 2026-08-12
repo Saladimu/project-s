@@ -11,6 +11,8 @@
 var ProjectS = (function () {
   var LS_API = 'projects_api_url';
   var LS_SHEET = 'projects_sheet_url';
+  var LS_CACHE = 'projects_data_cache';
+  var CACHE_TTL = 5 * 60 * 1000;
 
   var DEFAULT_SHEET = 'https://docs.google.com/spreadsheets/d/1FZKSBJl1a_YQkDy24nq4afzEBiV_f73mUX6p4alKR18';
 
@@ -169,6 +171,39 @@ var ProjectS = (function () {
   function canWrite() { return config.mode === 'api'; }
   function getBaseUrl() { return config.baseUrl; }
   function getSheetUrl() { return config.sheetUrl; }
+
+  /* ---------------- local cache ---------------- */
+
+  function cacheKey() {
+    return [config.mode, config.baseUrl, config.sheetUrl].join('|');
+  }
+
+  function getCached() {
+    try {
+      var raw = localStorage.getItem(LS_CACHE);
+      if (!raw) return null;
+      var entry = JSON.parse(raw);
+      if (!entry || entry.key !== cacheKey()) return null;
+      if (Date.now() - (entry.ts || 0) > CACHE_TTL) return null;
+      return entry.data || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCached(data) {
+    try {
+      localStorage.setItem(LS_CACHE, JSON.stringify({
+        key: cacheKey(),
+        ts: Date.now(),
+        data: data
+      }));
+    } catch (e) { /* storage full / unavailable - ignore */ }
+  }
+
+  function clearCached() {
+    try { localStorage.removeItem(LS_CACHE); } catch (e) { /* ignore */ }
+  }
 
   /* ---------------- Apps Script API ---------------- */
 
@@ -331,6 +366,9 @@ var ProjectS = (function () {
     setApiUrl: setApiUrl,
     setSheetUrl: setSheetUrl,
     call: call,
+    getCached: getCached,
+    setCached: setCached,
+    clearCached: clearCached,
     getState: function () { return state; }
   };
 })();

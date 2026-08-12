@@ -12,6 +12,7 @@ project-s/
   js/api.js             API client: Apps Script (read/write), live sheet (read), demo
   js/app.js             UI logic, rendering, formatting
   appsscript/Code.gs    Google Apps Script backend (paste into your sheet)
+  sw.js                 Service worker - caches static assets for fast loading
   favicon.png           Browser tab icon
   pro-s.jpg             Header logo (left side, next to the brand)
 ```
@@ -66,7 +67,13 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   (merged from the sheet's dropdown options and the unique values actually present in the task
   data), so nothing is hard-coded.
 - **Header** - shows the `pro-s.jpg` logo on the left of the brand; the browser tab shows the
-  `favicon.png` icon.
+  `favicon.png` icon. A **refresh button** (spinning icon) on the right manually re-fetches the
+  latest data from the sheet.
+- **Local caching** - works on both desktop and mobile for faster loading: fetched sheet data is
+  cached in `localStorage` (5-minute TTL, keyed by connection mode/URL) and rendered immediately
+  on load while the app refreshes in the background. A **service worker** (`sw.js`) caches the
+  static assets (HTML, CSS, JS, images) so repeat visits load near-instantly and stay usable
+  when offline.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.

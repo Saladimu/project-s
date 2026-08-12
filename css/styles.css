@@ -82,6 +82,34 @@ body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 .conn-dot.online { background: #34d399; }
 .conn-dot.offline { background: #f87171; }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.refresh-btn {
+  border: none;
+  background: transparent;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.refresh-btn:hover { background: rgba(255, 255, 255, 0.12); opacity: 1; }
+.refresh-btn:active { background: rgba(255, 255, 255, 0.2); }
+.refresh-btn .icon { width: 20px; height: 20px; }
+.refresh-btn.spinning .icon { animation: spin 0.7s linear infinite; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ---------- Views ---------- */
 main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
 

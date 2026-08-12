@@ -48,6 +48,7 @@
       var self = this;
       this.els = {
         connDot: document.getElementById('connDot'),
+        refreshBtn: document.getElementById('refreshBtn'),
         dashTotal: document.getElementById('dashTotal'),
         dashAmount: document.getElementById('dashAmount'),
         statusCards: document.getElementById('statusCards'),
@@ -148,6 +149,10 @@
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
       this.els.testBtn.addEventListener('click', function () { self.testConnection(); });
 
+      this.els.refreshBtn.addEventListener('click', function () {
+        self.manualRefresh();
+      });
+
       this.els.unlockBtn.addEventListener('click', function () { self.unlockSettings(); });
       this.els.lockBtn.addEventListener('click', function () { self.lockSettings(); });
       this.els.changePwdBtn.addEventListener('click', function () { self.changePassword(); });
@@ -227,27 +232,62 @@
 
     /* ---------------- data ---------------- */
 
-    refresh: function () {
+    refresh: function (force) {
       var self = this;
       this.setConnDot();
       this.renderBanner();
+
+      if (!force) {
+        var cached = ProjectS.getCached();
+        if (cached && cached.ok) {
+          self.applyData(cached);
+        }
+      }
+
       ProjectS.call('init').then(function (res) {
+        if (!res.ok) {
+          if (!ProjectS.getCached()) {
+            self.toast(res.error || 'Failed to load data', true);
+          }
+          self.setConnDot('offline');
+          return;
+        }
+        ProjectS.setCached(res);
+        self.applyData(res);
+      });
+    },
+
+    manualRefresh: function () {
+      var self = this;
+      if (this._refreshing) return;
+      this._refreshing = true;
+      this.els.refreshBtn.classList.add('spinning');
+      ProjectS.clearCached();
+      ProjectS.call('init').then(function (res) {
+        self._refreshing = false;
+        self.els.refreshBtn.classList.remove('spinning');
         if (!res.ok) {
           self.toast(res.error || 'Failed to load data', true);
           self.setConnDot('offline');
           return;
         }
-        self.state.columns = res.columns || [];
-        self.state.tasks = res.tasks || [];
-        self.state.options = {
-          purpose: res.options && res.options.purpose ? res.options.purpose : [],
-          pic: res.options && res.options.pic ? res.options.pic : [],
-          status: res.options && res.options.status ? res.options.status : []
-        };
-        self.state.organizations = res.organizations || [];
-        self.populateFormOptions();
-        self.renderAll();
+        ProjectS.setCached(res);
+        self.applyData(res);
+        self.toast('Data refreshed', false, true);
       });
+    },
+
+    applyData: function (res) {
+      this.state.columns = res.columns || [];
+      this.state.tasks = res.tasks || [];
+      this.state.options = {
+        purpose: res.options && res.options.purpose ? res.options.purpose : [],
+        pic: res.options && res.options.pic ? res.options.pic : [],
+        status: res.options && res.options.status ? res.options.status : []
+      };
+      this.state.organizations = res.organizations || [];
+      this.populateFormOptions();
+      this.renderAll();
     },
 
     organizationNames: function () {
