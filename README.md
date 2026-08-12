@@ -12,6 +12,8 @@ project-s/
   js/api.js             API client: Apps Script (read/write), live sheet (read), demo
   js/app.js             UI logic, rendering, formatting
   appsscript/Code.gs    Google Apps Script backend (paste into your sheet)
+  favicon.png           Browser tab icon
+  pro-s.jpg             Header logo (left side, next to the brand)
 ```
 
 ## Sheet structure the app expects
@@ -55,6 +57,13 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 
 - **Dashboard** - total task count plus per-status counts (cards + distribution bars).
   Tap a status card/bar to jump straight to the filtered task list.
+- **Value Filter** - a **Filter** button on the dashboard opens filter chips for **Purpose**,
+  **PIC** and **Organization**; the **Total Value** (SUM of the `Value` column) updates live
+  based on the selected filters. The chip values are **dynamic**, pulled from the Google Sheet
+  (merged from the sheet's dropdown options and the unique values actually present in the task
+  data), so nothing is hard-coded.
+- **Header** - shows the `pro-s.jpg` logo on the left of the brand; the browser tab shows the
+  `favicon.png` icon.
 - **Tasks** - searchable list, filter chips by status, an **Internal** filter
   (All / Internal / External), colour-coded status badges, overdue due dates highlighted.
 - **Add / Edit / Delete** - floating + button opens the form; each row has Edit and Delete.
@@ -103,3 +112,13 @@ On `add`, the backend auto-generates `No` (max + 1) and copies any sheet formula
 (e.g. `Task-ID`, `Duration`) from the last row into the new row. Formulas are copied
 with **relative references adjusted** to the new row (via `copyTo` + `PASTE_FORMULA`),
 so they stay dynamic; `Task-ID` and `Duration` are never written by the app.
+
+## Local preview
+
+To preview the app locally, serve the folder with a static HTTP server, for example:
+
+```
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000/` in a browser.
