@@ -514,6 +514,15 @@ textarea { resize: vertical; font-family: inherit; }
 .conn-status.err { color: var(--danger); }
 
 .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.about-block { display: flex; align-items: center; gap: 12px; }
+.about-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.about-block .muted { flex: 1; min-width: 0; }
 .setup-steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .setup-steps code {
   background: #f1f5f9;
