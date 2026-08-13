@@ -131,23 +131,11 @@ var ProjectS = (function () {
             break;
           case 'restore':
             var chosenName = String(params.name || '').trim();
-            var bakName2 = demoBackupName();
-            if (state.backups.indexOf(bakName2) !== -1 && !params.force) {
-              result = { ok: true, needConfirm: true, backup: bakName2 };
-              break;
-            }
-            if (state.backups.indexOf(bakName2) === -1) state.backups.push(bakName2);
-            result = { ok: true, restored: chosenName, backup: bakName2 };
+            result = { ok: true, restored: chosenName };
             break;
           case 'wipe':
-            var bakName3 = demoBackupName();
-            if (state.backups.indexOf(bakName3) !== -1 && !params.force) {
-              result = { ok: true, needConfirm: true, backup: bakName3 };
-              break;
-            }
-            if (state.backups.indexOf(bakName3) === -1) state.backups.push(bakName3);
             state.tasks = [];
-            result = { ok: true, backup: bakName3 };
+            result = { ok: true };
             break;
           case 'ping':
             result.message = 'Demo backend responding.';

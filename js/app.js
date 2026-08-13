@@ -1039,61 +1039,39 @@
       this.closeModal('restoreModal');
       this.askConfirm(
         'Restore backup',
-        'Restore "' + name + '"? The current TaskList will be backed up first before restoring.',
-        function () { self.restoreTaskList(name, false); },
+        'Restore "' + name + '"? The current TaskList data will be overwritten with this backup.',
+        function () { self.restoreTaskList(name); },
         'Restore'
       );
     },
 
-    restoreTaskList: function (name, force) {
+    restoreTaskList: function (name) {
       var self = this;
       this.setDbStatus('Restoring...');
-      ProjectS.call('restore', { action: 'restore', name: name, force: !!force }, 'POST').then(function (res) {
+      ProjectS.call('restore', { action: 'restore', name: name }, 'POST').then(function (res) {
         if (!res.ok) { self.setDbStatus(res.error || 'Restore failed', true); return; }
-        if (res.needConfirm) {
-          self.setDbStatus('');
-          self.askConfirm(
-            'Backup already exists',
-            'A backup named "' + res.backup + '" already exists for today. Continue and overwrite it?',
-            function () { self.restoreTaskList(name, true); },
-            'Overwrite'
-          );
-          return;
-        }
-        self.setDbStatus('Restored "' + res.restored + '". A backup of the old data was saved as "' + res.backup + '".');
+        self.setDbStatus('Restored "' + res.restored + '".');
         self.toast('Restore complete', false, true);
         self.refresh(true);
       });
     },
 
-    wipeTaskList: function (force) {
+    wipeTaskList: function () {
       var self = this;
-      if (!force) {
-        this.askConfirm(
-          'Wipe all data',
-          'This will back up the current TaskList, then delete ALL task data from the sheet. Continue?',
-          function () { self.wipeTaskList(true); },
-          'Wipe'
-        );
-        return;
-      }
-      this.setDbStatus('Wiping data...');
-      ProjectS.call('wipe', { action: 'wipe', force: true }, 'POST').then(function (res) {
-        if (!res.ok) { self.setDbStatus(res.error || 'Wipe failed', true); return; }
-        if (res.needConfirm) {
-          self.setDbStatus('');
-          self.askConfirm(
-            'Backup already exists',
-            'A backup named "' + res.backup + '" already exists for today. Continue and overwrite it?',
-            function () { self.wipeTaskList(true); },
-            'Overwrite'
-          );
-          return;
-        }
-        self.setDbStatus('All data wiped. Backup saved as "' + res.backup + '".');
-        self.toast('All data wiped', false, true);
-        self.refresh(true);
-      });
+      this.askConfirm(
+        'Wipe all data',
+        'This will delete ALL task data from the TaskList sheet. Continue?',
+        function () {
+          self.setDbStatus('Wiping data...');
+          ProjectS.call('wipe', { action: 'wipe' }, 'POST').then(function (res) {
+            if (!res.ok) { self.setDbStatus(res.error || 'Wipe failed', true); return; }
+            self.setDbStatus('All data wiped.');
+            self.toast('All data wiped', false, true);
+            self.refresh(true);
+          });
+        },
+        'Wipe'
+      );
     },
 
     /* ---------------- security ---------------- */
