@@ -17,6 +17,8 @@
 
 * { box-sizing: border-box; }
 
+.hidden { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -115,7 +117,7 @@ main { max-width: 640px; margin: 0 auto; padding: 14px 14px 24px; }
 
 .view { display: none; }
 .view.active { display: block; }
-#view-dashboard { padding-bottom: 112px; }
+#view-dashboard, #view-tasks, #view-organizations, #view-settings { padding-bottom: 112px; }
 
 /* ---------- Dashboard ---------- */
 .dash-hero {
