@@ -467,6 +467,24 @@ function backupTaskList_(params) {
     ss.deleteSheet(ss.getSheetByName(name));
   }
   src.copyTo(ss).setName(name);
+  var bak = ss.getSheetByName(name);
+
+  // Propagate the Duration formula (from the first data row, e.g. L2) down
+  // through every data row of the backup, so the backup is fully formula-driven
+  // instead of carrying plain values below the first row.
+  var headers = getHeaders_(bak);
+  var durIdx = headers.indexOf('Duration');
+  if (durIdx !== -1) {
+    var durFormula = bak.getRange(CONFIG.HEADER_ROW + 1, durIdx + 1).getFormula();
+    var bakLastRow = bak.getLastRow();
+    if (durFormula && bakLastRow > CONFIG.HEADER_ROW + 1) {
+      for (var r = CONFIG.HEADER_ROW + 2; r <= bakLastRow; r++) {
+        bak.getRange(CONFIG.HEADER_ROW + 1, durIdx + 1)
+          .copyTo(bak.getRange(r, durIdx + 1), SpreadsheetApp.CopyPasteType.PASTE_FORMULA, false);
+      }
+    }
+  }
+
   return { ok: true, backup: name, sheet: src.getName() };
 }
 
@@ -524,6 +542,21 @@ function restoreTaskList_(params) {
   formulaCols.forEach(function (fc) {
     if (fc.formula) current.getRange(CONFIG.HEADER_ROW + 1, fc.col + 1).setFormula(fc.formula);
   });
+
+  // Propagate the Duration formula (L2) down through every restored data row,
+  // so the whole Duration column is formula-driven (not plain values).
+  var lastRowAfter = current.getLastRow();
+  for (var f = 0; f < formulaCols.length; f++) {
+    var fc2 = formulaCols[f];
+    if (!fc2.formula) continue;
+    if (CONFIG.ARRAY_FORMULA_COLUMNS.indexOf(headers[fc2.col]) !== -1) continue; // array formula only in B2
+    if (lastRowAfter > CONFIG.HEADER_ROW + 1) {
+      for (var rr = CONFIG.HEADER_ROW + 2; rr <= lastRowAfter; rr++) {
+        current.getRange(CONFIG.HEADER_ROW + 1, fc2.col + 1)
+          .copyTo(current.getRange(rr, fc2.col + 1), SpreadsheetApp.CopyPasteType.PASTE_FORMULA, false);
+      }
+    }
+  }
 
   // Clear the array-formula column (Task-ID) from row 3 down, so stale values
   // pasted from the backup don't collide with the B2 array formula (#REF!).

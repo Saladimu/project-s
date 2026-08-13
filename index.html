@@ -150,7 +150,7 @@
         <div id="connStatus" class="conn-status"></div>
       </div>
 
-      <div class="card-block db-block">
+      <div class="card-block db-block" id="dbBlock">
         <h3 class="block-title">Database</h3>
         <p class="muted">Back up, restore or wipe the TaskList sheet.</p>
 
@@ -343,7 +343,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/api.js?v=15"></script>
-  <script src="js/app.js?v=15"></script>
+  <script src="js/app.js?v=16"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

@@ -75,6 +75,7 @@
         backupBtn: document.getElementById('backupBtn'),
         restoreBtn: document.getElementById('restoreBtn'),
         wipeBtn: document.getElementById('wipeBtn'),
+        dbBlock: document.getElementById('dbBlock'),
         dbStatus: document.getElementById('dbStatus'),
         restoreModal: document.getElementById('restoreModal'),
         restoreHint: document.getElementById('restoreHint'),
@@ -1101,6 +1102,7 @@
       this.els.saveBtn.disabled = locked;
       this.els.sheetUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://docs.google.com/spreadsheets/d/...';
       this.els.apiUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://script.google.com/macros/s/.../exec';
+      if (this.els.dbBlock) this.els.dbBlock.classList.toggle('hidden', locked);
     },
 
     checkPassword: function (pwd) {
