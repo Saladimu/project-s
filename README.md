@@ -2,6 +2,7 @@
 
 A mobile-first web app for entering and managing task data backed by a Google Sheet.
 Runs entirely as a static site (no build step) - open `index.html` in any browser.
+Responsive layout: optimised for **mobile**, **tablet** and **desktop** screens.
 
 ## Structure
 
@@ -57,6 +58,11 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 
 ## Features
 
+- **Responsive layout** - mobile-first, with dedicated breakpoints so the app adapts to
+  **tablets (>= 768px)** and **desktop (>= 1024px)**: wider content column, status cards in up
+  to 4 columns, task and organisation lists in 2 columns, the task form in 3 columns, the
+  Settings page in a 2-column grid, a centered (content-width) bottom nav, and a centered modal
+  with full rounded corners on larger screens.
 - **Dashboard** - total task count plus per-status counts (cards + distribution bars).
   The hero also shows the **Total Amount** (SUM of the `Value` column) on the right side
   in a smaller font with a "Total Amount" label below it. Each status card shows its own
