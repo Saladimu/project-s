@@ -14,6 +14,7 @@ project-s/
   apps script/Code.gs   Google Apps Script backend (paste into your sheet)
   sw.js                 Service worker - caches static assets for fast loading
   favicon.png           Browser tab icon
+  nbpicon.png           About-section logo (Settings)
   pro-s.jpg             Header logo (left side, next to the brand)
 ```
 
@@ -97,10 +98,14 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Dashboard colours** - status cards/bars are colour-coded; `Hold` renders brown and `Urgent`
   renders red.
 - **Note / Internal** - full support for the remaining task columns.
-- **Security** - Settings are locked by default with a **default password `00000`**; the
-  Spreadsheet / Apps Script links stay hidden until unlocked. Use the "Lock Settings" section
-  to change the password (stored as a hash). The **Database** submenu is also hidden until a
-  valid password is entered - unlock Settings to reveal the backup / restore / wipe buttons.
+- **Security** - Settings are locked by default with a **default password `00000`**. The
+  **Google Sheets Connection** submenu (blue, bold title) and the **Database** submenu are
+  hidden until a valid password is entered - unlock Settings to reveal them. With the default
+  password `00000`, the Spreadsheet / Apps Script URL fields stay **masked** (shown as a grey
+  `**** Masked *****` value); setting a custom password reveals the real links. Use the
+  "Lock Settings" section to change the password (stored as a hash).
+- **About** - the Settings **About** section shows the `nbpicon.png` logo next to the app
+  description.
 - **Database (Settings)** - backup / restore / wipe for the TaskList sheet, available only
   after unlocking with the password:
   - **Backup** duplicates the task sheet as `TaskBAK-dd-mm-yy` (today's date). If that backup
