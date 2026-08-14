@@ -69,6 +69,7 @@
         orgEmpty: document.getElementById('orgEmpty'),
         sheetUrl: document.getElementById('sheetUrl'),
         apiUrl: document.getElementById('apiUrl'),
+        connBlock: document.getElementById('connBlock'),
         testBtn: document.getElementById('testBtn'),
         saveBtn: document.getElementById('saveBtn'),
         connStatus: document.getElementById('connStatus'),
@@ -1102,6 +1103,7 @@
       this.els.saveBtn.disabled = locked;
       this.els.sheetUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://docs.google.com/spreadsheets/d/...';
       this.els.apiUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://script.google.com/macros/s/.../exec';
+      if (this.els.connBlock) this.els.connBlock.classList.toggle('hidden', locked);
       if (this.els.dbBlock) this.els.dbBlock.classList.toggle('hidden', locked);
     },
 
@@ -1117,12 +1119,27 @@
       var self = this;
       var p = this.els.unlockPwd.value;
       if (!p) { this.toast('Enter the password.', true); return; }
+      var usingDefaultPwd = !localStorage.getItem(LS_PWD);
       this.checkPassword(p).then(function (ok) {
         if (!ok) { self.toast('Incorrect password.', true); return; }
         self.els.unlockPwd.value = '';
         self.state.settingsLocked = false;
-        self.els.sheetUrl.value = ProjectS.getSheetUrl();
-        self.els.apiUrl.value = ProjectS.getBaseUrl();
+        if (usingDefaultPwd) {
+          // Default password only: keep the connection URLs masked.
+          self.els.sheetUrl.value = '**** Masked *****';
+          self.els.apiUrl.value = '**** Masked *****';
+          self.els.sheetUrl.classList.add('masked-input');
+          self.els.apiUrl.classList.add('masked-input');
+          self.els.sheetUrl.placeholder = '';
+          self.els.apiUrl.placeholder = '';
+        } else {
+          self.els.sheetUrl.value = ProjectS.getSheetUrl();
+          self.els.apiUrl.value = ProjectS.getBaseUrl();
+          self.els.sheetUrl.classList.remove('masked-input');
+          self.els.apiUrl.classList.remove('masked-input');
+          self.els.sheetUrl.placeholder = 'https://docs.google.com/spreadsheets/d/...';
+          self.els.apiUrl.placeholder = 'https://script.google.com/macros/s/.../exec';
+        }
         self.applySecurityState();
         self.toast('Unlocked.', false, true);
       });
@@ -1132,6 +1149,8 @@
       this.state.settingsLocked = true;
       this.els.sheetUrl.value = '';
       this.els.apiUrl.value = '';
+      this.els.sheetUrl.classList.remove('masked-input');
+      this.els.apiUrl.classList.remove('masked-input');
       this.els.connStatus.textContent = '';
       this.els.connStatus.className = 'conn-status';
       this.applySecurityState();

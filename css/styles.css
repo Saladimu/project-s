@@ -735,6 +735,8 @@ input[readonly] { background: #f8fafc; color: var(--muted); }
 .org-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
 /* ---------- Database / backup list ---------- */
+.conn-block .block-title { color: #2563eb; font-weight: 800; }
+.masked-input { color: #94a3b8 !important; }
 .db-block { background: #e7f6ec; }
 .db-block .btn-secondary { background: #ffffff; }
 .db-block .btn-danger { background: #dc2626; }
