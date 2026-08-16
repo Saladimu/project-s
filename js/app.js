@@ -283,15 +283,15 @@
       ProjectS.clearCached();
       ProjectS.call('init').then(function (res) {
         self._refreshing = false;
-        self.els.refreshBtn.classList.remove('spinning');
         if (!res.ok) {
+          self.els.refreshBtn.classList.remove('spinning');
           self.toast(res.error || 'Failed to load data', true);
           self.setConnDot('offline');
           return;
         }
         ProjectS.setCached(res);
         self.applyData(res);
-        self.toast('Data refreshed', false, true);
+        window.location.reload();
       });
     },
 
