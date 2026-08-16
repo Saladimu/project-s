@@ -318,14 +318,14 @@ main {
   text-transform: capitalize;
 }
 .status-card .sc-value {
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 4px 11px;
+  padding: 3px 10px;
   border-radius: 999px;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
   opacity: 1;
