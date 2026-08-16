@@ -586,7 +586,7 @@
       var overdue = this.isOverdue(t);
       var dueDate = t['Due Date'] ? '<span class="due-date' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue ' : '') + this.fmtDate(t['Due Date']) + '</span>' : '';
       var note = t.Note ? metaTag('note', t.Note) : '';
-      var internal = t.Internal ? metaTag('internal', 'Internal') : '';
+      var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
 
       return '<div class="task-card" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
@@ -604,11 +604,12 @@
           metaTag('user', t.PIC) +
           metaTag('org', t.Organization) +
           metaTag('tag', t.Purpose) +
-          duration + note + internal +
+          duration + note +
         '</div>' +
         '<div class="task-actions">' +
           '<button class="row-btn edit" data-row="' + t.row + '">' + svgIcon('pencil') + 'Edit</button>' +
           '<button class="row-btn del" data-row="' + t.row + '">' + svgIcon('trash') + 'Delete</button>' +
+          internal +
         '</div>' +
       '</div>';
     },

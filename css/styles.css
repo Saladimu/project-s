@@ -731,6 +731,19 @@ main {
 .row-btn.del:hover { background: var(--danger-soft); color: var(--danger); border-color: #fecdd3; }
 .row-btn:active { transform: scale(0.95); }
 
+.task-foot-internal {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.task-foot-internal .meta-tag {
+  background: linear-gradient(135deg, #f43f5e, #d946ef);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(217, 70, 239, 0.35);
+}
+
 /* ---------- Empty state / banner ---------- */
 .empty-state {
   text-align: center;
@@ -1054,7 +1067,22 @@ textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
   display: inline-flex;
   padding: 10px 16px;
   border-radius: 999px;
+  background: linear-gradient(135deg, #f43f5e, #d946ef);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(217, 70, 239, 0.4);
 }
+.field-internal .check-label:hover {
+  border-color: transparent;
+  filter: brightness(1.07);
+}
+.field-internal .check-label:has(input:checked) {
+  background: linear-gradient(135deg, #f43f5e, #d946ef);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+.field-internal .check-label input[type="checkbox"] { accent-color: #fff; }
 
 .field-hint { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; min-height: 13px; }
 .num-input { text-align: right; font-variant-numeric: tabular-nums; }
