@@ -149,6 +149,11 @@ input, select, textarea { font-family: inherit; }
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  font-size: 1.45em;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin-left: 1px;
+  transform: translateY(1px);
 }
 
 .brand-badge {
@@ -353,15 +358,28 @@ main {
   color: var(--muted-2);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+.status-card .sc-go .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--sc, #94a3b8);
+  transition: transform 0.25s var(--ease);
 }
 .status-card .sc-go::after {
   content: "→";
   font-weight: 900;
+  margin-left: auto;
   transition: transform 0.18s var(--ease);
 }
 .status-card:hover .sc-go::after { transform: translateX(3px); }
 .status-card:hover .sc-go { color: var(--sc, #64748b); }
+.status-card:hover .sc-go .icon { transform: scale(1.2); animation: nudge 0.9s ease-in-out infinite; }
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0) scale(1.2); }
+  50% { transform: translateX(2px) scale(1.25); }
+}
 
 .card-block {
   background: var(--surface);
@@ -923,10 +941,10 @@ textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
   height: calc(var(--nav-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   display: flex;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(230, 246, 238, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid #cdeada;
   box-shadow: 0 -4px 20px rgba(16, 24, 40, 0.08);
 }
 

@@ -430,7 +430,7 @@
           '<div class="sc-top"><div class="sc-count">' + n.toLocaleString() + '</div>' +
           '<div class="sc-value" style="background:' + c.card + ';color:#fff">' + self.formatValue(sv) + '</div></div>' +
           '<div class="sc-label">' + escapeHtml(s) + '</div>' +
-          '<div class="sc-go">Tap to view</div>' +
+          '<div class="sc-go">' + svgIcon('view') + '<span>Tap to view</span></div>' +
           '</div>';
       });
       this.els.statusCards.innerHTML = cardsHtml;
@@ -1243,7 +1243,8 @@
       pencil: '<path d="M16.9 4.1l3 3L8 19H5v-3L16.9 4.1zM14 6l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
       trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
       backup: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
-      arrow: '<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      arrow: '<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      view: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>'
     };
     return '<svg class="icon" viewBox="0 0 24 24">' + (paths[name] || '') + '</svg>';
   }
