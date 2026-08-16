@@ -589,7 +589,7 @@
       var internal = t.Internal ? metaTag('internal', 'Internal') : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
 
-      return '<div class="task-card" style="--sc:' + c.card + '">' +
+      return '<div class="task-card" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
         '<div class="task-main">' +
           '<div class="task-left">' +
             '<div class="task-date">' + (t['Task-ID'] ? escapeHtml(t['Task-ID']) + '  /  ' : '') + this.fmtDate(t.Date) + (t['Due Date'] ? '  /  Due ' + this.fmtDate(t['Due Date']) : '') + '</div>' +
