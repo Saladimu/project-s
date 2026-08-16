@@ -428,7 +428,7 @@
         var sv = sums[s] || 0;
         cardsHtml += '<div class="status-card" data-status="' + escapeHtml(s) + '" style="--sc:' + c.card + '">' +
           '<div class="sc-top"><div class="sc-count">' + n.toLocaleString() + '</div>' +
-          '<div class="sc-value" style="color:' + c.fg + '">' + self.formatValue(sv) + '</div></div>' +
+          '<div class="sc-value" style="background:' + c.card + ';color:#fff">' + self.formatValue(sv) + '</div></div>' +
           '<div class="sc-label">' + escapeHtml(s) + '</div>' +
           '<div class="sc-go">Tap to view</div>' +
           '</div>';
@@ -597,7 +597,7 @@
           '</div>' +
           '<div class="task-right">' +
             (value ? '<span class="task-value">' + value + '</span>' : '') +
-            '<span class="badge" style="--sc:' + c.card + ';--badge-fg:#fff">' + escapeHtml(t.Status || '') + '</span>' +
+            '<span class="badge" style="--sc:' + c.card + ';--badge-fg:#fff"><span class="badge-dot"></span>' + escapeHtml(t.Status || '') + '</span>' +
           '</div>' +
         '</div>' +
         '<div class="task-meta">' +
