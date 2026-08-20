@@ -174,3 +174,16 @@ python3 -m http.server 8000
 ```
 
 Then open `http://localhost:8000/` in a browser.
+
+## Changelog
+
+### 2026-08-20 - HTML audit fixes
+
+- **Fixed invalid HTML**: removed a stray duplicate `</script>` tag on the `js/app.js` include.
+- **Icon sprite**: replaced the 16 duplicated inline SVG icons in `index.html` with a single hidden
+  `<symbol>` sprite referenced via `<use href="#i-...">`. Each icon is now defined once (smaller
+  file, DRY, easier to re-theme).
+- **Accessibility**: added `aria-label` to icon-only buttons (FAB, modal close buttons) and
+  `aria-hidden="true"` to decorative SVGs.
+- **Security**: removed the hard-coded default password hint (`00000`) from the Settings UI text.
+  The default is still enforced in `js/app.js` (`DEFAULT_PWD`) - change it before deploying.
