@@ -49,6 +49,7 @@
       this.els = {
         connDot: document.getElementById('connDot'),
         refreshBtn: document.getElementById('refreshBtn'),
+        themeToggle: document.getElementById('themeToggle'),
         dashTotal: document.getElementById('dashTotal'),
         dashAmount: document.getElementById('dashAmount'),
         statusCards: document.getElementById('statusCards'),
@@ -126,10 +127,32 @@
       this.els.sheetUrl.value = '';
       this.els.apiUrl.value = '';
       this.bindEvents();
+      this.initTheme();
       this.applySecurityState();
       this.renderInternalFilter();
 
       this.refresh();
+    },
+
+    /* ---------------- theme ---------------- */
+
+    initTheme: function () {
+      var self = this;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      this.syncTheme(meta);
+      this.els.themeToggle.addEventListener('click', function () {
+        var root = document.documentElement;
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        self.syncTheme(meta);
+      });
+    },
+
+    syncTheme: function (meta) {
+      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (meta) meta.setAttribute('content', dark ? '#111827' : '#f2f4f9');
+      this.els.themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
     },
 
     /* ---------------- events ---------------- */
