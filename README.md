@@ -177,6 +177,17 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-08-21 - Light / dark theme toggle
+
+- **Theme toggle**: a sun/moon icon button in the header switches between **light** and **dark**
+  themes. The choice is stored in `localStorage` and, on first visit, follows the OS
+  `prefers-color-scheme` setting.
+- **No flash on load**: an inline `<head>` script applies the saved theme before first paint.
+- **Dark palette**: a `[data-theme="dark"]` variable set in `css/styles.css` drives the whole UI
+  (surfaces, text, borders, accents, shadows); hard-coded light tints (value-sum row, about card,
+  bottom nav, db block, demo banner, task-card hover) have explicit dark overrides.
+- **Browser chrome**: the `theme-color` meta is updated to match the active theme.
+
 ### 2026-08-20 - HTML audit fixes
 
 - **Fixed invalid HTML**: removed a stray duplicate `</script>` tag on the `js/app.js` include.
