@@ -177,6 +177,17 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-08-22 - Status icons, mobile value filter, FAB visibility
+
+- **Status icons**: each dashboard **status card** and **Status Distribution** bar row now shows a
+  status-specific icon (check, clock, pause, alert, sparkle, x, dot) to the left of the label,
+  tinted with the status colour. Unknown statuses fall back to a dot.
+- **Mobile value filter**: on screens below 768px the Value Filter chips **wrap onto stacked
+  lines** instead of a horizontal scroll strip.
+- **FAB visibility**: the floating (+) button is now hidden on the **Settings** and
+  **Organizations** views; the toolbar "Add" button (which has its own label) remains available.
+- **Icons**: added `i-sun` / `i-moon` (theme toggle) and the `i-status-*` set to the SVG sprite.
+
 ### 2026-08-21 - Light / dark theme toggle
 
 - **Theme toggle**: a sun/moon icon button in the header switches between **light** and **dark**
