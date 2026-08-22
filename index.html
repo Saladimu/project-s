@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=33">
+  <link rel="stylesheet" href="css/styles.css?v=36">
   <script>
     (function () {
       var saved;
@@ -60,6 +60,32 @@
     </symbol>
     <symbol id="i-moon" viewBox="0 0 24 24">
       <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-status-done" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M8 12l2.7 2.7L16.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-status-new" viewBox="0 0 24 24">
+      <path d="M12 2.5l1.7 5.8 5.8 1.7-5.8 1.7L12 17.5l-1.7-5.8-5.8-1.7 5.8-1.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-status-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-status-pause" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M10 9.5v5M14 9.5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-status-urgent" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 8v4M12 15.5h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-status-cancel" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-status-dot" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/>
     </symbol>
   </svg>
 
@@ -424,7 +450,7 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/api.js?v=16"></script>
-  <script src="js/app.js?v=27"></script>
+  <script src="js/app.js?v=29"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

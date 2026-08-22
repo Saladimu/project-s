@@ -40,6 +40,21 @@
       { bg: '#fffbeb', fg: '#b45309', bar: '#f59e0b', card: '#f59e0b' }
     ],
 
+    STATUS_ICONS: {
+      'new': 'i-status-new',
+      'not started': 'i-status-clock',
+      'in-progress': 'i-status-clock',
+      'in progress': 'i-status-clock',
+      'on hold': 'i-status-pause',
+      'hold': 'i-status-pause',
+      'urgent': 'i-status-urgent',
+      'done': 'i-status-done',
+      'completed': 'i-status-done',
+      'cancelled': 'i-status-cancel',
+      'in review': 'i-status-clock',
+      'unassigned': 'i-status-dot'
+    },
+
     MONTHS: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 
     /* ---------------- init ---------------- */
@@ -409,6 +424,11 @@
       return this.FALLBACK_COLORS[hash % this.FALLBACK_COLORS.length];
     },
 
+    statusIcon: function (status) {
+      var key = String(status || '').trim().toLowerCase();
+      return this.STATUS_ICONS[key] || 'i-status-dot';
+    },
+
     statusCounts: function () {
       var counts = {};
       this.state.tasks.forEach(function (t) {
@@ -453,7 +473,7 @@
         cardsHtml += '<div class="status-card" data-status="' + escapeHtml(s) + '" style="--sc:' + c.card + '">' +
           '<div class="sc-top"><div class="sc-count">' + n.toLocaleString() + '</div>' +
           '<div class="sc-value" style="background:' + c.card + ';color:#fff">' + self.formatValue(sv) + '</div></div>' +
-          '<div class="sc-label">' + escapeHtml(s) + '</div>' +
+          '<div class="sc-label"><svg class="icon sc-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></div>' +
           '<div class="sc-go">' + svgIcon('view') + '<span>Tap to view</span></div>' +
           '</div>';
       });
@@ -471,9 +491,9 @@
         var c = self.statusColor(s);
         var n = counts[s] || 0;
         var pct = Math.round((n / max) * 100);
-        barsHtml += '<div class="sb-row" data-status="' + escapeHtml(s) + '">' +
-          '<div class="sb-label">' + escapeHtml(s) + '</div>' +
-          '<div class="sb-track"><div class="sb-fill" style="--sc:' + c.bar + ';width:' + pct + '%"></div></div>' +
+        barsHtml += '<div class="sb-row" data-status="' + escapeHtml(s) + '" style="--sc:' + c.bar + '">' +
+          '<div class="sb-label"><svg class="icon sb-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></div>' +
+          '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%"></div></div>' +
           '<div class="sb-count">' + n.toLocaleString() + '</div></div>';
       });
       this.els.statusBars.innerHTML = barsHtml;

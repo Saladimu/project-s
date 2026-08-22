@@ -385,14 +385,26 @@ main {
 .sc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 
 .status-card .sc-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
   color: var(--muted);
   font-weight: 600;
   margin-top: 6px;
+}
+.status-card .sc-label span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: capitalize;
+  min-width: 0;
+}
+.sc-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--sc, #64748b);
 }
 .status-card .sc-value {
   font-size: 14px;
@@ -471,15 +483,27 @@ main {
 .sb-row:hover { background: var(--surface-2); }
 .sb-row:active { background: var(--surface-3); }
 .sb-label {
-  width: 108px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 130px;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
+  flex-shrink: 0;
+}
+.sb-label span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-shrink: 0;
   text-transform: capitalize;
+  min-width: 0;
+}
+.sb-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--sc, #64748b);
 }
 .sb-track {
   flex: 1;
@@ -1346,6 +1370,15 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
 /* ---------- Small screens ---------- */
 @media (min-width: 480px) {
   .status-cards { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---------- Mobile (< 768px): stack value filter chips ---------- */
+@media (max-width: 767px) {
+  .value-filter-panel .chips {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding-bottom: 6px;
+  }
 }
 
 /* ---------- Tablet (>= 768px) ---------- */
