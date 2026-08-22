@@ -275,7 +275,7 @@
       document.querySelectorAll('.nav-item').forEach(function (b) {
         b.classList.toggle('active', b.getAttribute('data-view') === name);
       });
-      this.els.fab.classList.toggle('hidden', name === 'settings');
+      this.els.fab.classList.toggle('hidden', name === 'settings' || name === 'organizations');
       if (name === 'dashboard') this.renderDashboard();
       if (name === 'tasks') this.renderTasks();
       if (name === 'organizations') this.renderOrganizations();
