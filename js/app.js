@@ -260,6 +260,7 @@
       document.querySelectorAll('.nav-item').forEach(function (b) {
         b.classList.toggle('active', b.getAttribute('data-view') === name);
       });
+      this.els.fab.classList.toggle('hidden', name === 'settings');
       if (name === 'dashboard') this.renderDashboard();
       if (name === 'tasks') this.renderTasks();
       if (name === 'organizations') this.renderOrganizations();
