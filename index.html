@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=36">
+  <link rel="stylesheet" href="css/styles.css?v=37">
   <script>
     (function () {
       var saved;
@@ -223,14 +223,6 @@
           <div class="btn-row">
             <button id="lockBtn" class="btn btn-secondary">Lock Settings</button>
           </div>
-          <label class="field-label" for="oldPwd">Current password</label>
-          <input id="oldPwd" type="password" autocomplete="current-password" placeholder="Current password">
-          <label class="field-label" for="newPwd2">New password</label>
-          <input id="newPwd2" type="password" autocomplete="new-password" placeholder="New password">
-          <input id="confirmPwd2" type="password" autocomplete="new-password" placeholder="Confirm new password">
-          <div class="btn-row">
-            <button id="changePwdBtn" class="btn btn-primary">Change Password</button>
-          </div>
         </div>
       </div>
 
@@ -262,6 +254,19 @@
           <button id="wipeBtn" class="btn btn-danger">Wipe All Data</button>
         </div>
         <div id="dbStatus" class="conn-status"></div>
+      </div>
+
+      <div class="card-block pwd-block" id="pwdBlock">
+        <h3 class="block-title">Change Password</h3>
+        <p class="muted">Update the password that protects Settings.</p>
+        <label class="field-label" for="oldPwd">Current password</label>
+        <input id="oldPwd" type="password" autocomplete="current-password" placeholder="Current password">
+        <label class="field-label" for="newPwd2">New password</label>
+        <input id="newPwd2" type="password" autocomplete="new-password" placeholder="New password">
+        <input id="confirmPwd2" type="password" autocomplete="new-password" placeholder="Confirm new password">
+        <div class="btn-row">
+          <button id="changePwdBtn" class="btn btn-primary">Change Password</button>
+        </div>
       </div>
 
       <div class="card-block about-card">
@@ -451,7 +456,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=17"></script>
-  <script src="js/app.js?v=31"></script>
+  <script src="js/app.js?v=33"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

@@ -2,6 +2,7 @@
 (function () {
   var LS_PWD = 'projects_s_pwd';
   var DEFAULT_PWD = '00000';
+  var SETTINGS_IDLE_MS = 5 * 60 * 1000;
 
   var App = {
     state: {
@@ -107,6 +108,7 @@
         newPwd2: document.getElementById('newPwd2'),
         confirmPwd2: document.getElementById('confirmPwd2'),
         changePwdBtn: document.getElementById('changePwdBtn'),
+        pwdBlock: document.getElementById('pwdBlock'),
         aboutText: document.getElementById('aboutText'),
         fab: document.getElementById('fab'),
         taskModal: document.getElementById('taskModal'),
@@ -212,6 +214,11 @@
         if (e.key === 'Enter') self.unlockSettings();
       });
 
+      this._onSettingsActivity = function () { self.bumpSettingsIdle(); };
+      ['pointerdown', 'keydown', 'input', 'touchstart', 'scroll', 'click'].forEach(function (evt) {
+        document.addEventListener(evt, self._onSettingsActivity, { passive: true });
+      });
+
       this.els.internalFilter.querySelectorAll('.chip').forEach(function (chip) {
         chip.addEventListener('click', function () {
           self.state.internalFilter = chip.getAttribute('data-internal');
@@ -276,6 +283,8 @@
         b.classList.toggle('active', b.getAttribute('data-view') === name);
       });
       this.els.fab.classList.toggle('hidden', name === 'settings' || name === 'organizations');
+      if (name === 'settings') this.startSettingsIdleWatch();
+      else this.stopSettingsIdleWatch();
       if (name === 'dashboard') this.renderDashboard();
       if (name === 'tasks') this.renderTasks();
       if (name === 'organizations') this.renderOrganizations();
@@ -1151,6 +1160,7 @@
       this.els.apiUrl.placeholder = locked ? 'Locked - enter password to view' : 'https://script.google.com/macros/s/.../exec';
       if (this.els.connBlock) this.els.connBlock.classList.toggle('hidden', locked);
       if (this.els.dbBlock) this.els.dbBlock.classList.toggle('hidden', locked);
+      if (this.els.pwdBlock) this.els.pwdBlock.classList.toggle('hidden', locked);
     },
 
     checkPassword: function (pwd) {
@@ -1187,11 +1197,40 @@
           self.els.apiUrl.placeholder = 'https://script.google.com/macros/s/.../exec';
         }
         self.applySecurityState();
+        self.startSettingsIdleWatch();
         self.toast('Unlocked.', false, true);
       });
     },
 
-    lockSettings: function () {
+    startSettingsIdleWatch: function () {
+      if (this.state.currentView !== 'settings' || this.state.settingsLocked) {
+        this.stopSettingsIdleWatch();
+        return;
+      }
+      this.bumpSettingsIdle();
+    },
+
+    stopSettingsIdleWatch: function () {
+      if (this._settingsIdleTimer) {
+        clearTimeout(this._settingsIdleTimer);
+        this._settingsIdleTimer = null;
+      }
+    },
+
+    bumpSettingsIdle: function () {
+      if (this.state.currentView !== 'settings' || this.state.settingsLocked) return;
+      var self = this;
+      if (this._settingsIdleTimer) clearTimeout(this._settingsIdleTimer);
+      this._settingsIdleTimer = setTimeout(function () {
+        self._settingsIdleTimer = null;
+        if (self.state.currentView === 'settings' && !self.state.settingsLocked) {
+          self.lockSettings(true);
+        }
+      }, SETTINGS_IDLE_MS);
+    },
+
+    lockSettings: function (fromIdle) {
+      this.stopSettingsIdleWatch();
       this.state.settingsLocked = true;
       this.els.sheetUrl.value = '';
       this.els.apiUrl.value = '';
@@ -1200,7 +1239,7 @@
       this.els.connStatus.textContent = '';
       this.els.connStatus.className = 'conn-status';
       this.applySecurityState();
-      this.toast('Settings locked.', false, true);
+      this.toast(fromIdle ? 'Settings locked after 5 minutes of inactivity.' : 'Settings locked.', false, true);
     },
 
     changePassword: function () {
