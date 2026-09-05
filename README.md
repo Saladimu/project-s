@@ -10,6 +10,7 @@ Responsive layout: optimised for **mobile**, **tablet** and **desktop** screens.
 project-s/
   index.html            App shell (4 views: Dashboard, Tasks, Organizations, Settings)
   css/styles.css        Mobile-first styling
+  js/cache.js           In-memory + localStorage cache (cache-first, stale-while-revalidate)
   js/api.js             API client: Apps Script (read/write), live sheet (read), demo
   js/app.js             UI logic, rendering, formatting
   apps script/Code.gs   Google Apps Script backend (paste into your sheet)
@@ -76,11 +77,13 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Header** - shows the `pro-s.jpg` logo on the left of the brand; the browser tab shows the
   `favicon.png` icon. A **refresh button** (spinning icon) on the right manually re-fetches the
   latest data from the sheet.
-- **Local caching** - works on both desktop and mobile for faster loading: fetched sheet data is
-  cached in `localStorage` (5-minute TTL, keyed by connection mode/URL) and rendered immediately
-  on load while the app refreshes in the background. A **service worker** (`sw.js`) caches the
-  static assets (HTML, CSS, JS, images) so repeat visits load near-instantly and stay usable
-  when offline.
+- **Local caching** - `js/cache.js` (`TaskCache`) holds the last successful payload in memory
+  and persists it to `localStorage` asynchronously (5-minute TTL, keyed by connection mode/URL).
+  Fresh cache is served immediately and **skips the Google Sheet / Apps Script request**. Stale
+  cache still paints the UI first, then revalidates in the background. Duplicate in-flight reads
+  are coalesced; add / edit / delete (and other writes) invalidate the cache so the next load
+  hits the network. A **service worker** (`sw.js`) caches the static assets (HTML, CSS, JS,
+  images) so repeat visits load near-instantly and stay usable when offline.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.
@@ -176,6 +179,17 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-05 - Faster cache-first data loading
+
+- **`js/cache.js`**: in-memory first, deferred `localStorage` writes, no console-log overhead.
+  Fresh data (5-minute TTL) is returned without a network round-trip; stale data still renders
+  immediately while a background refresh runs.
+- **`js/api.js`**: read actions (`init`, `tasks`, `options`, `orgs`) use `TaskCache`. Duplicate
+  in-flight reads are coalesced. Write actions clear the cache so the next load fetches live data.
+- **`js/app.js`**: if the cache is still fresh, `refresh()` applies it and returns without a
+  network call.
+- **`sw.js`**: includes `js/cache.js` in the static asset cache.
 
 ### 2026-08-22 - Status icons, mobile value filter, FAB visibility
 

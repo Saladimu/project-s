@@ -298,6 +298,7 @@
         var cached = ProjectS.getCached();
         if (cached && cached.ok) {
           self.applyData(cached);
+          if (ProjectS.isCacheFresh()) return;
         }
       }
 

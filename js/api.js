@@ -30,6 +30,8 @@ var ProjectS = (function () {
     backups: []
   };
 
+  var inflight = {};
+
   /* ---------------- demo data (mirrors the live sheet) ---------------- */
 
   function seedDemo() {
@@ -195,35 +197,25 @@ var ProjectS = (function () {
 
   /* ---------------- local cache ---------------- */
 
-  function cacheKey() {
-    return [config.mode, config.baseUrl, config.sheetUrl].join('|');
+  function cacheOpts() {
+    return { key: LS_CACHE, cacheKey: [config.mode, config.baseUrl, config.sheetUrl].join('|') };
   }
 
   function getCached() {
-    try {
-      var raw = localStorage.getItem(LS_CACHE);
-      if (!raw) return null;
-      var entry = JSON.parse(raw);
-      if (!entry || entry.key !== cacheKey()) return null;
-      if (Date.now() - (entry.ts || 0) > CACHE_TTL) return null;
-      return entry.data || null;
-    } catch (e) {
-      return null;
-    }
+    var entry = TaskCache.get(cacheOpts());
+    return (entry && entry.data) || null;
+  }
+
+  function isCacheFresh() {
+    return TaskCache.isValid(CACHE_TTL / 60000, cacheOpts());
   }
 
   function setCached(data) {
-    try {
-      localStorage.setItem(LS_CACHE, JSON.stringify({
-        key: cacheKey(),
-        ts: Date.now(),
-        data: data
-      }));
-    } catch (e) { /* storage full / unavailable - ignore */ }
+    TaskCache.save(data, cacheOpts());
   }
 
   function clearCached() {
-    try { localStorage.removeItem(LS_CACHE); } catch (e) { /* ignore */ }
+    TaskCache.clear(cacheOpts());
   }
 
   /* ---------------- Apps Script API ---------------- */
@@ -353,11 +345,42 @@ var ProjectS = (function () {
     return parts.length ? '&' + parts.join('&') : '';
   }
 
-  function call(action, params, method) {
-    params = params || {};
+  function isReadAction(action) {
+    return action === 'init' || action === 'options' || action === 'tasks' || action === 'orgs';
+  }
+
+  function isWriteAction(action) {
+    return action === 'add' || action === 'update' || action === 'delete' ||
+      action === 'addOrg' || action === 'updateOrg' || action === 'deleteOrg' ||
+      action === 'backup' || action === 'restore' || action === 'wipe';
+  }
+
+  function dispatch(action, params, method) {
     if (config.mode === 'demo') return demo(action, params);
     if (config.mode === 'api') return apiCall(action, params, method);
     return readCall(action, params);
+  }
+
+  function call(action, params, method) {
+    params = params || {};
+    if (isWriteAction(action)) clearCached();
+    if (isReadAction(action) && method !== 'POST') {
+      var cached = getCached();
+      if (cached && cached.ok && isCacheFresh()) {
+        return Promise.resolve(cached);
+      }
+      var inflightKey = [config.mode, config.baseUrl, config.sheetUrl, action].join('|');
+      if (inflight[inflightKey]) return inflight[inflightKey];
+      inflight[inflightKey] = dispatch(action, params, method).then(function (res) {
+        delete inflight[inflightKey];
+        return res;
+      }, function (err) {
+        delete inflight[inflightKey];
+        throw err;
+      });
+      return inflight[inflightKey];
+    }
+    return dispatch(action, params, method);
   }
 
   function clone(arr) { return JSON.parse(JSON.stringify(arr)); }
@@ -398,6 +421,7 @@ var ProjectS = (function () {
     getCached: getCached,
     setCached: setCached,
     clearCached: clearCached,
+    isCacheFresh: isCacheFresh,
     getState: function () { return state; }
   };
 })();

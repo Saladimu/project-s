@@ -1,9 +1,10 @@
 /* Project S - service worker: cache static assets for fast offline-ish loading. */
-var CACHE_NAME = 'project-s-v1';
+var CACHE_NAME = 'project-s-v2';
 var ASSETS = [
   './',
   './index.html',
   './css/styles.css',
+  './js/cache.js',
   './js/api.js',
   './js/app.js',
   './favicon.png',

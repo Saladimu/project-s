@@ -1,98 +1,116 @@
-/**
- * TaskCache Utility Module
- * Handles lightweight client-side caching using localStorage.
- * Implements the foundation for a "Cache-First, Stale-While-Revalidate" strategy.
- */
-const TaskCache = {
-  // Unique key to prevent collisions with other apps on the same domain
-  CACHE_KEY: 'project_s_tasks_cache',
+var TaskCache = (function () {
+  var STORE_KEY = 'projects_data_cache';
+  var DEFAULT_TTL_MS = 5 * 60 * 1000;
+  var memory = null;
+  var persistTimer = null;
 
-  /**
-   * Saves data to localStorage along with the current timestamp.
-   * @param {any} data - The data to cache (objects, arrays, etc.).
-   */
-  save: function(data) {
-    try {
-      const cachePayload = {
-        timestamp: Date.now(),
-        data: data
-      };
-      localStorage.setItem(this.CACHE_KEY, JSON.stringify(cachePayload));
-      console.log('[TaskCache] ✅ Data saved to cache successfully.');
-    } catch (error) {
-      console.error('[TaskCache] ❌ Failed to save data to cache:', error);
-      // Fallback: clear cache if quota is exceeded or stringify fails
-      this.clear();
-    }
-  },
-
-  /**
-   * Retrieves data from localStorage.
-   * @returns {object|null} An object containing { timestamp, data } or null if empty/invalid.
-   */
-  get: function() {
-    try {
-      const cachedString = localStorage.getItem(this.CACHE_KEY);
-      if (!cachedString) {
-        return null; // No cache exists
-      }
-      
-      const parsed = JSON.parse(cachedString);
-      
-      // Basic validation to ensure it has the expected structure
-      if (parsed && typeof parsed.timestamp === 'number' && parsed.data !== undefined) {
-        return parsed;
-      }
-      
-      console.warn('[TaskCache] ⚠️ Corrupted cache structure detected. Clearing...');
-      this.clear();
-      return null;
-    } catch (error) {
-      console.error('[TaskCache] ❌ Failed to parse cache (corrupted data):', error);
-      this.clear();
-      return null;
-    }
-  },
-
-  /**
-   * Checks if the cached data is still valid based on TTL (Time To Live).
-   * @param {number} ttlMinutes - The maximum age of the cache in minutes (e.g., 5).
-   * @returns {boolean} True if cache is valid and fresh, false otherwise.
-   */
-  isValid: function(ttlMinutes) {
-    const cached = this.get();
-    if (!cached) {
-      return false;
-    }
-    
-    const now = Date.now();
-    const cacheAgeMs = now - cached.timestamp;
-    const ttlMs = ttlMinutes * 60 * 1000;
-
-    if (cacheAgeMs < ttlMs) {
-      console.log(`[TaskCache] ⏱️ Cache is valid (age: ${(cacheAgeMs / 1000).toFixed(1)}s, TTL: ${ttlMinutes}m).`);
-      return true;
-    }
-    
-    console.log(`[TaskCache] ⏰ Cache expired (age: ${(cacheAgeMs / 1000).toFixed(1)}s, TTL: ${ttlMinutes}m).`);
-    return false;
-  },
-
-  /**
-   * Clears the cache from localStorage.
-   */
-  clear: function() {
-    localStorage.removeItem(this.CACHE_KEY);
-    console.log('[TaskCache] 🧹 Cache cleared.');
-  },
-
-  /**
-   * Helper to get the age of the cache in minutes (useful for UI display like "Updated 2m ago").
-   * @returns {number|null} Age in minutes, or null if no cache exists.
-   */
-  getAgeInMinutes: function() {
-    const cached = this.get();
-    if (!cached) return null;
-    return (Date.now() - cached.timestamp) / (1000 * 60);
+  function now() {
+    return Date.now();
   }
-};
+
+  function storeKey(opts) {
+    return (opts && opts.key) || STORE_KEY;
+  }
+
+  function normalize(parsed, key) {
+    if (!parsed || typeof parsed !== 'object') return null;
+    var ts = typeof parsed.timestamp === 'number'
+      ? parsed.timestamp
+      : (typeof parsed.ts === 'number' ? parsed.ts : NaN);
+    if (!isFinite(ts) || parsed.data === undefined) return null;
+    return {
+      timestamp: ts,
+      data: parsed.data,
+      cacheKey: parsed.cacheKey || parsed.key || '',
+      _key: key
+    };
+  }
+
+  function readMemory(key) {
+    if (memory && memory._key === key) return memory;
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) {
+        memory = null;
+        return null;
+      }
+      memory = normalize(JSON.parse(raw), key);
+      return memory;
+    } catch (e) {
+      memory = null;
+      return null;
+    }
+  }
+
+  function persist(key, entry) {
+    if (persistTimer) {
+      clearTimeout(persistTimer);
+      persistTimer = null;
+    }
+    persistTimer = setTimeout(function () {
+      persistTimer = null;
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          timestamp: entry.timestamp,
+          ts: entry.timestamp,
+          data: entry.data,
+          cacheKey: entry.cacheKey,
+          key: entry.cacheKey
+        }));
+      } catch (e) {
+        try { localStorage.removeItem(key); } catch (e2) {}
+      }
+    }, 0);
+  }
+
+  return {
+    CACHE_KEY: STORE_KEY,
+    TTL_MS: DEFAULT_TTL_MS,
+
+    save: function (data, opts) {
+      opts = opts || {};
+      var key = storeKey(opts);
+      memory = {
+        timestamp: now(),
+        data: data,
+        cacheKey: opts.cacheKey || '',
+        _key: key
+      };
+      persist(key, memory);
+    },
+
+    get: function (opts) {
+      opts = opts || {};
+      var entry = readMemory(storeKey(opts));
+      if (!entry) return null;
+      if (opts.cacheKey && entry.cacheKey && entry.cacheKey !== opts.cacheKey) return null;
+      return entry;
+    },
+
+    isValid: function (ttlMinutes, opts) {
+      var entry = this.get(opts);
+      if (!entry) return false;
+      var ttlMs = (ttlMinutes != null && ttlMinutes !== '')
+        ? Number(ttlMinutes) * 60 * 1000
+        : DEFAULT_TTL_MS;
+      if (!isFinite(ttlMs) || ttlMs <= 0) ttlMs = DEFAULT_TTL_MS;
+      return (now() - entry.timestamp) < ttlMs;
+    },
+
+    clear: function (opts) {
+      var key = storeKey(opts);
+      memory = null;
+      if (persistTimer) {
+        clearTimeout(persistTimer);
+        persistTimer = null;
+      }
+      try { localStorage.removeItem(key); } catch (e) {}
+    },
+
+    getAgeInMinutes: function (opts) {
+      var entry = this.get(opts);
+      if (!entry) return null;
+      return (now() - entry.timestamp) / 60000;
+    }
+  };
+})();
