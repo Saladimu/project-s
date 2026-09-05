@@ -108,11 +108,13 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   renders red.
 - **Note / Internal** - full support for the remaining task columns.
 - **Security** - Settings are locked by default with a **default password `00000`**. The
-  **Google Sheets Connection** submenu (blue, bold title) and the **Database** submenu are
-  hidden until a valid password is entered - unlock Settings to reveal them. With the default
-  password `00000`, the Spreadsheet / Apps Script URL fields stay **masked** (shown as a grey
-  `**** Masked *****` value); setting a custom password reveals the real links. Use the
-  "Lock Settings" section to change the password (stored as a hash).
+  **Google Sheets Connection** submenu (blue, bold title), the **Database** submenu, and the
+  **Change Password** submenu are hidden until a valid password is entered - unlock Settings
+  to reveal them. With the default password `00000`, the Spreadsheet / Apps Script URL fields
+  stay **masked** (shown as a grey `**** Masked *****` value); setting a custom password
+  reveals the real links. Unlocked Settings auto-lock after **5 minutes of inactivity**.
+  Password changes live in a dedicated **Change Password** submenu (red background) after
+  Database; the hash is stored locally.
 - **About** - the Settings **About** section shows the `nbpicon.png` logo next to the app
   description.
 - **Database (Settings)** - backup / restore / wipe for the TaskList sheet, available only
@@ -121,8 +123,9 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
     name already exists you get an alert with the option to continue (overwrite). The `Duration`
     formula from the first data row is propagated through every data row of the backup so it is
     fully formula-driven.
-  - **Restore** lists all `TaskBAK-dd-mm-yy` sheets to choose from (or shows "No backup TaskList"
-    when none exist). Choosing a backup overwrites the current TaskList with the backup values,
+  - **Restore** lists all `TaskBAK-dd-mm-yy` sheets in **descending date order** (newest first),
+    or shows "No backup TaskList" when none exist. Choosing a backup overwrites the current
+    TaskList with the backup values,
     then brings back the `Task-ID` (B2) and `Duration` (L2) formulas: `Task-ID` stays a single
     array formula in `B2` and the `Duration` formula is propagated through all restored rows.
     Stale values pasted below the B2 array formula are cleared so it never shows `#REF!`.
@@ -179,6 +182,15 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-05 - Settings idle lock, password submenu, restore sort
+
+- **Idle lock**: unlocked Settings auto-lock after 5 minutes with no activity (click, tap,
+  key, or scroll). Leaving Settings also stops the timer.
+- **Change Password**: moved out of Security into its own submenu after Database, with a red
+  background. Hidden until Settings is unlocked.
+- **Restore list**: backup files (`TaskBAK-dd-mm-yy`) are sorted by date descending (newest
+  first), not alphabetically.
 
 ### 2026-09-05 - Faster cache-first data loading
 

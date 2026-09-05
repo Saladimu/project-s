@@ -495,9 +495,18 @@ function listBackups_() {
   for (var i = 0; i < sheets.length; i++) {
     if (isBackupSheetName_(sheets[i].getName())) names.push(sheets[i].getName());
   }
-  names.sort();
-  names.reverse();
+  names.sort(function (a, b) {
+    return backupDateKey_(b) - backupDateKey_(a);
+  });
   return { ok: true, backups: names };
+}
+
+function backupDateKey_(name) {
+  var m = String(name || '').match(/^TaskBAK-(\d{2})-(\d{2})-(\d{2})$/);
+  if (!m) return 0;
+  var yy = Number(m[3]);
+  var year = yy >= 70 ? 1900 + yy : 2000 + yy;
+  return year * 10000 + Number(m[2]) * 100 + Number(m[1]);
 }
 
 function restoreTaskList_(params) {

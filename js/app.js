@@ -1072,7 +1072,9 @@
           self.els.backupList.innerHTML = '<p class="muted">' + escapeHtml(res.error || 'Failed to load backups.') + '</p>';
           return;
         }
-        var backups = res.backups || [];
+        var backups = (res.backups || []).slice().sort(function (a, b) {
+          return backupDateKey(b) - backupDateKey(a);
+        });
         self.els.backupEmpty.classList.toggle('hidden', backups.length > 0);
         self.els.restoreHint.classList.toggle('hidden', backups.length === 0);
         self.els.backupList.innerHTML = backups.map(function (name) {
@@ -1284,6 +1286,14 @@
       }, 3000);
     }
   };
+
+  function backupDateKey(name) {
+    var m = /^TaskBAK-(\d{2})-(\d{2})-(\d{2})$/.exec(String(name || '').trim());
+    if (!m) return 0;
+    var yy = Number(m[3]);
+    var year = yy >= 70 ? 1900 + yy : 2000 + yy;
+    return year * 10000 + Number(m[2]) * 100 + Number(m[1]);
+  }
 
   function escapeHtml(str) {
     return String(str === null || str === undefined ? '' : str)
