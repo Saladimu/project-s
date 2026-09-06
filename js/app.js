@@ -620,11 +620,56 @@
       });
     },
 
+    relateColorMap: function () {
+      var rowById = {};
+      this.state.tasks.forEach(function (t) {
+        var id = String(t['Task-ID'] || '').trim();
+        if (id) rowById[id] = t.row;
+      });
+
+      var parent = {};
+      this.state.tasks.forEach(function (t) { parent[t.row] = t.row; });
+      function find(x) {
+        if (parent[x] !== x) parent[x] = find(parent[x]);
+        return parent[x];
+      }
+      function union(a, b) {
+        var ra = find(a), rb = find(b);
+        if (ra !== rb) parent[ra] = rb;
+      }
+
+      this.state.tasks.forEach(function (t) {
+        var rel = String(t['Task Relate'] || '').trim();
+        if (rel && rowById[rel] && rowById[rel] !== t.row) union(t.row, rowById[rel]);
+      });
+
+      var compSize = {};
+      this.state.tasks.forEach(function (t) {
+        var r = find(t.row);
+        compSize[r] = (compSize[r] || 0) + 1;
+      });
+
+      var colorIdx = 0;
+      var rootColor = {};
+      var map = {};
+      this.state.tasks.forEach(function (t) {
+        var r = find(t.row);
+        if ((compSize[r] || 0) < 2) return;
+        if (rootColor[r] === undefined) {
+          rootColor[r] = 'rel-grp-' + (colorIdx % 8);
+          colorIdx++;
+        }
+        map[t.row] = rootColor[r];
+      });
+      return map;
+    },
+
     renderTasks: function () {
       this.renderChips();
       this.renderInternalFilter();
 
       var self = this;
+      var relMap = this.relateColorMap();
       var filtered = this.state.tasks.filter(function (t) {
         if (self.state.filter !== 'All' && String(t.Status || '').trim() !== self.state.filter) return false;
         if (self.state.internalFilter === 'internal' && !t.Internal) return false;
@@ -641,7 +686,7 @@
 
       this.els.emptyState.classList.toggle('hidden', filtered.length > 0);
       this.els.taskList.innerHTML = filtered.map(function (t) {
-        return self.taskCard(t);
+        return self.taskCard(t, relMap[t.row] || '');
       }).join('');
 
       this.els.taskList.querySelectorAll('.row-btn.edit').forEach(function (b) {
@@ -656,7 +701,7 @@
       });
     },
 
-    taskCard: function (t) {
+    taskCard: function (t, relClass) {
       var self = this;
       var c = this.statusColor(t.Status);
       var value = this.formatValue(t.Value);
@@ -666,8 +711,9 @@
       var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + t['Task Relate']) : '';
       var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
+      var relClassAttr = relClass ? ' ' + relClass : '';
 
-      return '<div class="task-card" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
+      return '<div class="task-card' + relClassAttr + '" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
         '<div class="task-main">' +
           '<div class="task-left">' +
             '<div class="task-date">' + (t['Task-ID'] ? escapeHtml(t['Task-ID']) + '  /  ' : '') + this.fmtDate(t.Date) + (t['Due Date'] ? '  /  Due ' + this.fmtDate(t['Due Date']) : '') + '</div>' +

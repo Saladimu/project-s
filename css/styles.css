@@ -701,6 +701,18 @@ main {
 }
 .task-card:active { transform: scale(0.99); }
 
+/* Shared tint for tasks linked through "Task Relate".
+   Both endpoints of a relation get the same .rel-grp-N class.
+   --sc-bg is also overridden so hover keeps the group tint. */
+.task-card.rel-grp-0 { background: #eff6ff; --sc-bg: #dbeafe; }
+.task-card.rel-grp-1 { background: #ecfdf5; --sc-bg: #d1fae5; }
+.task-card.rel-grp-2 { background: #fffbeb; --sc-bg: #fef3c7; }
+.task-card.rel-grp-3 { background: #fdf2f8; --sc-bg: #fce7f3; }
+.task-card.rel-grp-4 { background: #f5f3ff; --sc-bg: #ede9fe; }
+.task-card.rel-grp-5 { background: #fff7ed; --sc-bg: #ffedd5; }
+.task-card.rel-grp-6 { background: #fef2f2; --sc-bg: #fee2e2; }
+.task-card.rel-grp-7 { background: #f0f9ff; --sc-bg: #e0f2fe; }
+
 .task-main { display: flex; justify-content: space-between; gap: 12px; }
 .task-left { min-width: 0; flex: 1; }
 
@@ -1432,7 +1444,16 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
 }
 [data-theme="dark"] .meta-tag.duration.overdue { border-color: rgba(244, 63, 94, 0.35); }
 [data-theme="dark"] .meta-tag.duration.ok { border-color: rgba(99, 102, 241, 0.35); }
-[data-theme="dark"] .task-card:hover { background: var(--surface-2); }
+[data-theme="dark"] .task-card:hover { background: var(--sc-bg, var(--surface-2)); }
+
+[data-theme="dark"] .task-card.rel-grp-0 { background: #172554; --sc-bg: #1e3a8a; }
+[data-theme="dark"] .task-card.rel-grp-1 { background: #022c22; --sc-bg: #064e3b; }
+[data-theme="dark"] .task-card.rel-grp-2 { background: #3b2a08; --sc-bg: #713f12; }
+[data-theme="dark"] .task-card.rel-grp-3 { background: #500724; --sc-bg: #831843; }
+[data-theme="dark"] .task-card.rel-grp-4 { background: #2e1065; --sc-bg: #4c1d95; }
+[data-theme="dark"] .task-card.rel-grp-5 { background: #431407; --sc-bg: #7c2d12; }
+[data-theme="dark"] .task-card.rel-grp-6 { background: #450a0a; --sc-bg: #7f1d1d; }
+[data-theme="dark"] .task-card.rel-grp-7 { background: #082f49; --sc-bg: #0c4a6e; }
 [data-theme="dark"] .banner { border-color: rgba(217, 119, 6, 0.45); color: #fbbf24; }
 [data-theme="dark"] .about-card {
   background: linear-gradient(150deg, #14241d, #101b16);
