@@ -118,6 +118,7 @@
         confirmDelete: document.getElementById('confirmDelete'),
         confirmText: document.getElementById('confirmText'),
         fTaskID: document.getElementById('fTaskID'),
+        fRelate: document.getElementById('fRelate'),
         fDate: document.getElementById('fDate'),
         fDue: document.getElementById('fDue'),
         fDateHint: document.getElementById('fDateHint'),
@@ -361,22 +362,44 @@
       return this.state.organizations.map(function (o) { return o.Name; }).filter(Boolean);
     },
 
+    taskIdOptions: function () {
+      var seen = {};
+      var byId = {};
+      this.state.tasks.forEach(function (t) {
+        var id = String(t['Task-ID'] || '').trim();
+        if (id && !seen[id]) {
+          seen[id] = true;
+          byId[id] = String(t['Task name'] || '').trim();
+        }
+      });
+      var ids = Object.keys(seen).sort(function (a, b) {
+        return a.localeCompare(b, undefined, { numeric: true });
+      });
+      return ids.map(function (id) {
+        return { value: id, label: id + (byId[id] ? '  /  ' + byId[id] : '') };
+      });
+    },
+
     populateFormOptions: function () {
       this.fillSelect(this.els.fPurpose, this.state.options.purpose, '-- Select Purpose --');
       this.fillSelect(this.els.fPIC, this.state.options.pic, '-- Select PIC --');
       this.fillSelect(this.els.fStatus, this.state.options.status, '-- Select Status --');
       this.fillSelect(this.els.fOrg, this.organizationNames(), '-- Select Organization --');
+      this.fillSelect(this.els.fRelate, this.taskIdOptions(), '-- None --');
     },
 
     fillSelect: function (select, items, placeholder) {
       var self = this;
       var html = placeholder ? '<option value="">' + placeholder + '</option>' : '';
       items.forEach(function (it) {
+        var isObj = it !== null && typeof it === 'object';
+        var val = isObj ? it.value : it;
+        var label = isObj ? (it.label !== undefined ? it.label : it.value) : it;
         if (select === self.els.fStatus) {
-          var c = self.statusColor(it);
-          html += '<option value="' + escapeHtml(it) + '" style="color:' + c.fg + ';font-weight:600;">' + escapeHtml(it) + '</option>';
+          var c = self.statusColor(val);
+          html += '<option value="' + escapeHtml(val) + '" style="color:' + c.fg + ';font-weight:600;">' + escapeHtml(label) + '</option>';
         } else {
-          html += '<option value="' + escapeHtml(it) + '">' + escapeHtml(it) + '</option>';
+          html += '<option value="' + escapeHtml(val) + '">' + escapeHtml(label) + '</option>';
         }
       });
       select.innerHTML = html;
@@ -607,7 +630,7 @@
         if (self.state.internalFilter === 'internal' && !t.Internal) return false;
         if (self.state.internalFilter === 'external' && t.Internal) return false;
         if (!self.state.search) return true;
-        var hay = [t['Task name'], t['Task-ID'], t.Date, t['Due Date'], t.Purpose, t.PIC, t.Organization, t.Status, t.Note]
+        var hay = [t['Task name'], t['Task-ID'], t['Task Relate'], t.Date, t['Due Date'], t.Purpose, t.PIC, t.Organization, t.Status, t.Note]
           .join(' ').toLowerCase();
         return hay.indexOf(self.state.search) !== -1;
       });
@@ -640,6 +663,7 @@
       var overdue = this.isOverdue(t);
       var dueDate = t['Due Date'] ? '<span class="due-date' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue ' : '') + this.fmtDate(t['Due Date']) + '</span>' : '';
       var note = t.Note ? metaTag('note', t.Note) : '';
+      var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + t['Task Relate']) : '';
       var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
 
@@ -658,7 +682,7 @@
           metaTag('user', t.PIC) +
           metaTag('org', t.Organization) +
           metaTag('tag', t.Purpose) +
-          duration + note +
+          duration + relate + note +
         '</div>' +
         '<div class="task-actions">' +
           '<button class="row-btn edit" data-row="' + t.row + '">' + svgIcon('pencil') + 'Edit</button>' +
@@ -866,6 +890,7 @@
         this.els.fPIC.value = task.PIC || '';
         this.els.fStatus.value = task.Status || '';
         this.els.fInternal.checked = !!task.Internal;
+        this.setRelateValue(task['Task Relate'] || '');
       } else {
         this.autoId();
         this.els.fDate.value = new Date().toISOString().slice(0, 10);
@@ -879,6 +904,7 @@
         this.els.fPIC.value = '';
         this.els.fStatus.value = '';
         this.els.fInternal.checked = false;
+        this.els.fRelate.value = '';
       }
 
       this.syncDateHint('fDate', 'fDateHint');
@@ -895,6 +921,22 @@
       this.els.fTaskID.value = '';
     },
 
+    setRelateValue: function (val) {
+      var v = String(val || '').trim();
+      var sel = this.els.fRelate;
+      var found = false;
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === v) { found = true; break; }
+      }
+      if (v && !found) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      }
+      sel.value = v;
+    },
+
     saveTask: function () {
       var self = this;
       if (!this.guardWrite()) return;
@@ -904,10 +946,19 @@
       var pic = this.els.fPIC.value;
       var status = this.els.fStatus.value;
       var date = this.els.fDate.value;
+      var relate = this.els.fRelate.value;
 
       if (!taskName || !purpose || !pic || !status || !date) {
         this.toast('Please fill Date, Purpose, PIC, Status and Task name.', true);
         return;
+      }
+
+      if (relate && this.state.editingRow) {
+        var editingTask = this.state.tasks.find(function (t) { return t.row === self.state.editingRow; });
+        if (editingTask && relate === String(editingTask['Task-ID'] || '').trim()) {
+          this.toast('A task cannot relate to itself.', true);
+          return;
+        }
       }
 
       var fields = {
@@ -920,7 +971,8 @@
         'Value': this.parseValue(this.els.fValue.value),
         'Note': this.els.fNote.value.trim(),
         'Internal': this.els.fInternal.checked,
-        'Status': status
+        'Status': status,
+        'Task Relate': relate
       };
 
       var params = this.state.editingRow
@@ -1318,6 +1370,7 @@
       org: '<path d="M4 21V4h10v3h6v14h-9m0 0h9M8 8h2m-2 4h2m-2 4h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
       tag: '<path d="M20 12l-8 8-9-9V4h7l10 10zM7.5 7.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
       note: '<path d="M4 5a2 2 0 0 1 2-2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5zM14 3v6h6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      relate: '<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
       internal: '<path d="M12 2l2.6 2.6 3.7.5.5 3.7L21 11l-2.2 2.2-.5 3.7-3.7.5L12 20l-2.6-2.6-3.7-.5-.5-3.7L3 11l2.2-2.2.5-3.7 3.7-.5L12 2zM9 11.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
     };
     return '<span class="meta-tag"><svg class="icon" viewBox="0 0 24 24">' +
