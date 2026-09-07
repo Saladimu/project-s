@@ -860,6 +860,12 @@
       return ('0' + d.getDate()).slice(-2) + '-' + this.MONTHS[d.getMonth()] + '-' + String(d.getFullYear() % 100);
     },
 
+    todayGMT7: function () {
+      var now = new Date();
+      var gmt7 = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 7 * 3600000);
+      return gmt7.toISOString().slice(0, 10);
+    },
+
     formatValue: function (v) {
       var n = Number(v);
       if (v === '' || v === null || v === undefined || isNaN(n)) return '';
@@ -939,7 +945,7 @@
         this.setRelateValue(task['Task Relate'] || '');
       } else {
         this.autoId();
-        this.els.fDate.value = new Date().toISOString().slice(0, 10);
+        this.els.fDate.value = this.todayGMT7();
         this.els.fDue.value = '';
         this.els.fTask.value = '';
         this.els.fNote.value = '';
