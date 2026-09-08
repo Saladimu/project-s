@@ -135,6 +135,7 @@
         orgModal: document.getElementById('orgModal'),
         orgFormTitle: document.getElementById('orgFormTitle'),
         fOrgName: document.getElementById('fOrgName'),
+        fOrgDesc: document.getElementById('fOrgDesc'),
         orgFormSubmit: document.getElementById('orgFormSubmit'),
         confirmTitle: document.getElementById('confirmTitle'),
         toast: document.getElementById('toast')
@@ -753,23 +754,27 @@
       var self = this;
       var q = (this.els.orgSearch.value || '').trim().toLowerCase();
       var list = this.state.organizations.filter(function (o) {
-        return !q || String(o.Name).toLowerCase().indexOf(q) !== -1;
+        if (!q) return true;
+        return String(o.Name).toLowerCase().indexOf(q) !== -1 ||
+          String(o.Description || '').toLowerCase().indexOf(q) !== -1;
       });
 
       this.els.orgEmpty.classList.toggle('hidden', list.length > 0);
 
       var html = list.map(function (o) {
         var initial = (o.Name || '?').trim().charAt(0).toUpperCase();
+        var desc = String(o.Description || '').trim();
         return '<div class="org-item">' +
           '<div class="org-info">' +
             '<div class="org-badge">' + escapeHtml(initial) + '</div>' +
             '<div>' +
               '<div class="org-name">' + escapeHtml(o.Name) + '</div>' +
               '<div class="org-meta">No ' + escapeHtml(String(o.No !== '' && o.No !== undefined ? o.No : '-')) + '</div>' +
+              (desc ? '<div class="org-desc">' + escapeHtml(desc) + '</div>' : '') +
             '</div>' +
           '</div>' +
           '<div class="org-actions">' +
-            '<button class="row-btn edit" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '">' + svgIcon('pencil') + 'Edit</button>' +
+            '<button class="row-btn edit" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '" data-desc="' + escapeHtml(o.Description || '') + '">' + svgIcon('pencil') + 'Edit</button>' +
             '<button class="row-btn del" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '">' + svgIcon('trash') + 'Delete</button>' +
           '</div>' +
         '</div>';
@@ -778,7 +783,7 @@
 
       this.els.orgList.querySelectorAll('.row-btn.edit').forEach(function (b) {
         b.addEventListener('click', function () {
-          self.openOrgForm(Number(b.getAttribute('data-row')), b.getAttribute('data-name'));
+          self.openOrgForm(Number(b.getAttribute('data-row')), b.getAttribute('data-name'), b.getAttribute('data-desc'));
         });
       });
       this.els.orgList.querySelectorAll('.row-btn.del').forEach(function (b) {
@@ -788,12 +793,13 @@
       });
     },
 
-    openOrgForm: function (row, name) {
+    openOrgForm: function (row, name, desc) {
       var self = this;
       if (!this.guardWrite()) return;
       this.state.editingOrgRow = row || null;
       this.els.orgFormTitle.textContent = row ? 'Edit Organization' : 'Add Organization';
       this.els.fOrgName.value = name || '';
+      this.els.fOrgDesc.value = desc || '';
       this.openModal('orgModal');
       setTimeout(function () { self.els.fOrgName.focus(); }, 250);
     },
@@ -802,6 +808,7 @@
       var self = this;
       if (!this.guardWrite()) return;
       var name = this.els.fOrgName.value.trim();
+      var desc = this.els.fOrgDesc.value.trim();
       if (!name) {
         this.toast('Organization name is required.', true);
         return;
@@ -809,8 +816,8 @@
       this.setBusy(true);
       var action = this.state.editingOrgRow ? 'updateOrg' : 'addOrg';
       var params = this.state.editingOrgRow
-        ? { action: action, row: this.state.editingOrgRow, name: name }
-        : { action: action, name: name };
+        ? { action: action, row: this.state.editingOrgRow, name: name, description: desc }
+        : { action: action, name: name, description: desc };
       ProjectS.call(action, params, 'POST').then(function (res) {
         self.setBusy(false);
         if (!res.ok) {

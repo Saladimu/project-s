@@ -20,6 +20,7 @@ var CONFIG = {
   TASK_SHEET : '',                 // '' = auto-detect (first sheet with Purpose+PIC headers)
   ORG_SHEET  : 'Organization',     // sheet holding the organisation list
   ORG_COLUMN : 'Name',             // column used for the organisation lookup
+  ORG_DESC_COLUMN : 'Description', // optional description column shown next to the name
   HEADER_ROW : 1,                  // row where column headers live
   FORMULA_COLUMNS : ['Task-ID', 'Duration'],    // columns auto-filled by sheet formulas - never written by the app
   ARRAY_FORMULA_COLUMNS : ['Task-ID']          // array formulas: only ever live in the first data row (e.g. B2) and auto-fill the column
@@ -267,7 +268,9 @@ function orgLayout_(sheet) {
     .map(function (h) { return String(h || '').trim().toLowerCase(); });
   var nameIdx = headers.indexOf(CONFIG.ORG_COLUMN.toLowerCase());
   var noIdx = headers.indexOf('no');
-  return { nameIdx: nameIdx, noIdx: noIdx, size: lastCol };
+  var descIdx = headers.indexOf(CONFIG.ORG_DESC_COLUMN.toLowerCase());
+  if (descIdx === -1) descIdx = headers.indexOf('desc');
+  return { nameIdx: nameIdx, noIdx: noIdx, descIdx: descIdx, size: lastCol };
 }
 
 function getOrganizations_() {
@@ -284,7 +287,8 @@ function getOrganizations_() {
     out.push({
       row: r,
       No: layout.noIdx >= 0 ? sheet.getRange(r, layout.noIdx + 1).getValue() : '',
-      Name: name
+      Name: name,
+      Description: layout.descIdx >= 0 ? String(sheet.getRange(r, layout.descIdx + 1).getValue() || '').trim() : ''
     });
   }
   return out;
@@ -312,8 +316,9 @@ function addOrg_(params) {
   var row = new Array(layout.size).fill('');
   if (layout.noIdx >= 0) row[layout.noIdx] = nextNo;
   row[layout.nameIdx] = name;
+  if (layout.descIdx >= 0) row[layout.descIdx] = String(params.description || '').trim();
   sheet.appendRow(row);
-  return { ok: true, row: sheet.getLastRow(), No: layout.noIdx >= 0 ? nextNo : '', Name: name };
+  return { ok: true, row: sheet.getLastRow(), No: layout.noIdx >= 0 ? nextNo : '', Name: name, Description: String(params.description || '').trim() };
 }
 
 function updateOrg_(params) {
@@ -326,6 +331,7 @@ function updateOrg_(params) {
   var layout = orgLayout_(sheet);
   if (layout.nameIdx === -1) throw new Error('Organization sheet needs a "' + CONFIG.ORG_COLUMN + '" column');
   sheet.getRange(rowNum, layout.nameIdx + 1).setValue(name);
+  if (layout.descIdx >= 0) sheet.getRange(rowNum, layout.descIdx + 1).setValue(String(params.description || '').trim());
   return { ok: true };
 }
 

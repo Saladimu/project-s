@@ -28,7 +28,8 @@ The task sheet columns (from the provided spreadsheet):
 No | Task-ID | Task name | Task Relate | Purpose | PIC | Organization | Date | Due Date | Value | Note | Internal | Duration | Status
 ```
 
-The **Organization** sheet supplies the `Name` column used for the organisation lookup.
+The **Organization** sheet supplies the `Name` column used for the organisation lookup, plus an
+optional `Description` column shown under each organisation in the Organizations view.
 
 ## Two connection modes
 
@@ -185,6 +186,13 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-08 - Organization description
+
+- The Organizations view now supports an optional **Description** per organisation. The
+  Add/Edit form gained a `Description` field, shown in small text under each organisation name
+  in the list and searchable. Live sheets only need a `Description` column on the Organization
+  sheet (or it is ignored); the backend maps by header.
 
 ### 2026-09-06 - Task Relate field
 

@@ -41,8 +41,15 @@ var ProjectS = (function () {
       pic: ['Golf', 'Echo'],
       status: ['Done', 'In-Progress', 'Not Started']
     };
-    state.organizations = ['Binus', 'Wardaya', 'Kemurnian', 'Jessica', 'Sun Education', 'Kobi Education', 'Scholars']
-      .map(function (n, i) { return { row: i + 2, No: i + 1, Name: n }; });
+    state.organizations = [
+      { Name: 'Binus', Description: 'Bina Nusantara University' },
+      { Name: 'Wardaya', Description: 'Wardaya College' },
+      { Name: 'Kemurnian', Description: 'Kemurnian School' },
+      { Name: 'Jessica', Description: '' },
+      { Name: 'Sun Education', Description: 'Study abroad agency' },
+      { Name: 'Kobi Education', Description: 'Kobi English course' },
+      { Name: 'Scholars', Description: '' }
+    ].map(function (o, i) { return { row: i + 2, No: i + 1, Name: o.Name, Description: o.Description }; });
     state.tasks = [
       { row: 2, 'No': 1, 'Task-ID': 'Task-001', 'Task name': 'Bootcamp', 'Task Relate': '', 'Purpose': 'Local', 'PIC': 'Golf', 'Organization': 'Binus', 'Date': '2026-07-01', 'Due Date': '', 'Value': 150000, 'Note': 'Binus (4D3N)', 'Internal': false, 'Duration': '', 'Status': 'Done' },
       { row: 3, 'No': 2, 'Task-ID': 'Task-002', 'Task name': 'Formulir Binus', 'Task Relate': 'Task-001', 'Purpose': 'Local', 'PIC': 'Golf', 'Organization': 'Binus', 'Date': '2026-07-10', 'Due Date': '', 'Value': 250000, 'Note': '', 'Internal': false, 'Duration': '', 'Status': 'Done' },
@@ -105,15 +112,19 @@ var ProjectS = (function () {
             break;
           case 'addOrg':
             var orgName = String(params.name || '').trim();
+            var orgDesc = String(params.description || '').trim();
             var lastOrg = state.organizations[state.organizations.length - 1];
             var nextNo = lastOrg ? Number(lastOrg.No) + 1 : 1;
             var orgRow = lastOrg ? lastOrg.row + 1 : 2;
-            state.organizations.push({ row: orgRow, No: nextNo, Name: orgName });
-            result = { ok: true, row: orgRow, No: nextNo, Name: orgName };
+            state.organizations.push({ row: orgRow, No: nextNo, Name: orgName, Description: orgDesc });
+            result = { ok: true, row: orgRow, No: nextNo, Name: orgName, Description: orgDesc };
             break;
           case 'updateOrg':
             state.organizations.forEach(function (o) {
-              if (o.row === Number(params.row)) o.Name = String(params.name || '').trim();
+              if (o.row === Number(params.row)) {
+                o.Name = String(params.name || '').trim();
+                o.Description = String(params.description || '').trim();
+              }
             });
             break;
           case 'deleteOrg':
@@ -266,12 +277,12 @@ var ProjectS = (function () {
         var columns = taskG.cols;
         var orgs = orgG && orgG.rows.length
           ? orgG.rows.map(function (r, i) {
-              return { row: i + 2, No: r.No || '', Name: String(r.Name || '').trim() };
+              return { row: i + 2, No: r.No || '', Name: String(r.Name || '').trim(), Description: String(r.Description || '').trim() };
             }).filter(function (o) { return o.Name; })
           : [];
         if (!orgs.length) {
           orgs = unique(tasks.map(function (t) { return t.Organization; }).filter(Boolean))
-            .map(function (name, i) { return { row: i + 2, No: i + 1, Name: name }; });
+            .map(function (name, i) { return { row: i + 2, No: i + 1, Name: name, Description: '' }; });
         }
         return {
           ok: true,

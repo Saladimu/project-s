@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=40">
+  <link rel="stylesheet" href="css/styles.css?v=41">
   <script>
     (function () {
       var saved;
@@ -426,6 +426,8 @@
       <div class="modal-body">
         <label class="field-label" for="fOrgName">Name *</label>
         <input id="fOrgName" type="text" placeholder="Organization name" autocomplete="off">
+        <label class="field-label" for="fOrgDesc">Description</label>
+        <input id="fOrgDesc" type="text" placeholder="Short description (optional)" autocomplete="off">
       </div>
       <div class="modal-foot">
         <button class="btn btn-secondary" data-close="orgModal">Cancel</button>
@@ -460,8 +462,8 @@
   <div id="toast" class="toast"></div>
 
   <script src="js/cache.js?v=2"></script>
-  <script src="js/api.js?v=19"></script>
-  <script src="js/app.js?v=38"></script>
+  <script src="js/api.js?v=20"></script>
+  <script src="js/app.js?v=39"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});
