@@ -190,14 +190,16 @@ function readTasks_(sheet, headers) {
 
 function normalizeCell_(header, value) {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    // Format in the spreadsheet's own timezone; toISOString() would shift the
+    // calendar date for any timezone offset from UTC (e.g. GMT+7).
+    return Utilities.formatDate(value, sheetTimeZone_(), 'yyyy-MM-dd');
   }
   if (typeof value === 'string') {
     var s = value.trim();
     if (s === '') return '';
-    if (isDateHeader_(header) && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-      var d = new Date(s);
-      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    if (isDateHeader_(header)) {
+      var us = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+      if (us) return us[3] + '-' + pad2_(us[1]) + '-' + pad2_(us[2]);
     }
     return s;
   }
@@ -211,11 +213,26 @@ function isDateHeader_(header) {
 
 function toCellValue_(header, value) {
   if (isDateHeader_(header) && typeof value === 'string' && value) {
+    var iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12, 0, 0);
+    var us = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+    if (us) return new Date(Number(us[3]), Number(us[1]) - 1, Number(us[2]), 12, 0, 0);
     var d = new Date(value);
     if (!isNaN(d.getTime())) return d;
   }
   return value;
 }
+
+var _sheetTimeZone = null;
+function sheetTimeZone_() {
+  if (!_sheetTimeZone) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    _sheetTimeZone = (ss && ss.getSpreadsheetTimeZone()) || 'GMT+7';
+  }
+  return _sheetTimeZone;
+}
+
+function pad2_(n) { return (Number(n) < 10 ? '0' : '') + Number(n); }
 
 /* ------------------------------------------------------------------ */
 /*  Dropdown (data validation) reading                                 */
@@ -277,18 +294,20 @@ function getOrganizations_() {
   var sheet = getOrgSheet_();
   if (!sheet) return [];
   var lastRow = sheet.getLastRow();
-  if (lastRow < 1) return [];
+  var start = CONFIG.HEADER_ROW + 1;
+  if (lastRow < start) return [];
   var layout = orgLayout_(sheet);
   if (layout.nameIdx === -1) return [];
+  var data = sheet.getRange(start, 1, lastRow - start + 1, layout.size).getValues();
   var out = [];
-  for (var r = 2; r <= lastRow; r++) {
-    var name = String(sheet.getRange(r, layout.nameIdx + 1).getValue() || '').trim();
+  for (var i = 0; i < data.length; i++) {
+    var name = String(data[i][layout.nameIdx] || '').trim();
     if (!name) continue;
     out.push({
-      row: r,
-      No: layout.noIdx >= 0 ? sheet.getRange(r, layout.noIdx + 1).getValue() : '',
+      row: start + i,
+      No: layout.noIdx >= 0 ? data[i][layout.noIdx] : '',
       Name: name,
-      Description: layout.descIdx >= 0 ? String(sheet.getRange(r, layout.descIdx + 1).getValue() || '').trim() : ''
+      Description: layout.descIdx >= 0 ? String(data[i][layout.descIdx] || '').trim() : ''
     });
   }
   return out;
@@ -306,9 +325,12 @@ function addOrg_(params) {
   if (layout.noIdx >= 0) {
     var lastRow = sheet.getLastRow();
     var maxNo = 0;
-    for (var r = 2; r <= lastRow; r++) {
-      var n = Number(sheet.getRange(r, layout.noIdx + 1).getValue());
-      if (!isNaN(n) && n > maxNo) maxNo = n;
+    if (lastRow > CONFIG.HEADER_ROW) {
+      var vals = sheet.getRange(CONFIG.HEADER_ROW + 1, layout.noIdx + 1, lastRow - CONFIG.HEADER_ROW, 1).getValues();
+      for (var i = 0; i < vals.length; i++) {
+        var n = Number(vals[i][0]);
+        if (!isNaN(n) && n > maxNo) maxNo = n;
+      }
     }
     nextNo = maxNo + 1;
   }
@@ -376,14 +398,17 @@ function addTask_(params) {
 function firstEmptyDataRow_(sheet, headers) {
   var lastRow = sheet.getLastRow();
   var start = CONFIG.HEADER_ROW + 1;
-  for (var r = start; r <= lastRow + 1; r++) {
+  if (lastRow < start) return start;
+  var lastCol = sheet.getLastColumn();
+  var data = sheet.getRange(start, 1, lastRow - start + 1, lastCol).getValues();
+  for (var i = 0; i < data.length; i++) {
     var hasData = false;
     for (var c = 0; c < headers.length; c++) {
       if (CONFIG.FORMULA_COLUMNS.indexOf(headers[c]) !== -1) continue;
-      var v = sheet.getRange(r, c + 1).getValue();
+      var v = data[i][c];
       if (v !== '' && v !== null && v !== undefined) { hasData = true; break; }
     }
-    if (!hasData) return r;
+    if (!hasData) return start + i;
   }
   return lastRow + 1;
 }
@@ -392,9 +417,12 @@ function nextNo_(sheet, headers) {
   var idx = headers.indexOf('No');
   if (idx === -1) return '';
   var lastRow = sheet.getLastRow();
+  var start = CONFIG.HEADER_ROW + 1;
+  if (lastRow < start) return 1;
+  var vals = sheet.getRange(start, idx + 1, lastRow - start + 1, 1).getValues();
   var maxNo = 0;
-  for (var r = CONFIG.HEADER_ROW + 1; r <= lastRow; r++) {
-    var n = Number(sheet.getRange(r, idx + 1).getValue());
+  for (var i = 0; i < vals.length; i++) {
+    var n = Number(vals[i][0]);
     if (!isNaN(n) && n > maxNo) maxNo = n;
   }
   return maxNo + 1;
@@ -444,11 +472,7 @@ var BACKUP_PREFIX = 'TaskBAK-';
 var BACKUP_RE = /^TaskBAK-\d{2}-\d{2}-\d{2}$/;
 
 function backupSheetName_() {
-  var now = new Date();
-  var dd = ('0' + now.getDate()).slice(-2);
-  var mm = ('0' + (now.getMonth() + 1)).slice(-2);
-  var yy = String(now.getFullYear()).slice(-2);
-  return BACKUP_PREFIX + dd + '-' + mm + '-' + yy;
+  return BACKUP_PREFIX + Utilities.formatDate(new Date(), sheetTimeZone_(), 'dd-MM-yy');
 }
 
 function isBackupSheetName_(name) {

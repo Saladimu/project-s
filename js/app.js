@@ -3,6 +3,7 @@
   var LS_PWD = 'projects_s_pwd';
   var DEFAULT_PWD = '00000';
   var SETTINGS_IDLE_MS = 5 * 60 * 1000;
+  var GMT7_OFFSET_MS = 7 * 60 * 60 * 1000;
 
   var App = {
     state: {
@@ -185,10 +186,11 @@
 
       this.els.fab.addEventListener('click', function () { self.openForm(); });
 
-      this.els.searchInput.addEventListener('input', function () {
+      var onTaskSearch = debounce(function () {
         self.state.search = self.els.searchInput.value.trim().toLowerCase();
         self.renderTasks();
-      });
+      }, 150);
+      this.els.searchInput.addEventListener('input', onTaskSearch);
 
       this.els.filterToggle.addEventListener('click', function () {
         self.els.filterChips.classList.toggle('hidden');
@@ -229,7 +231,35 @@
         });
       });
 
-      this.els.orgSearch.addEventListener('input', function () { self.renderOrganizations(); });
+      var onOrgSearch = debounce(function () { self.renderOrganizations(); }, 150);
+      this.els.orgSearch.addEventListener('input', onOrgSearch);
+
+      this.els.taskList.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.row-btn') : null;
+        if (!btn || !self.els.taskList.contains(btn)) return;
+        var row = Number(btn.getAttribute('data-row'));
+        if (btn.classList.contains('edit')) self.openForm(row);
+        else if (btn.classList.contains('del')) self.openDelete(row);
+      });
+
+      this.els.filterChips.addEventListener('click', function (e) {
+        var chip = e.target.closest ? e.target.closest('.chip') : null;
+        if (!chip || !self.els.filterChips.contains(chip)) return;
+        self.state.filter = chip.getAttribute('data-status');
+        self.renderTasks();
+      });
+
+      this.els.orgList.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.row-btn') : null;
+        if (!btn || !self.els.orgList.contains(btn)) return;
+        var row = Number(btn.getAttribute('data-row'));
+        if (btn.classList.contains('edit')) {
+          self.openOrgForm(row, btn.getAttribute('data-name'), btn.getAttribute('data-desc'));
+        } else if (btn.classList.contains('del')) {
+          self.openOrgDelete(row, btn.getAttribute('data-name'));
+        }
+      });
+
       this.els.addOrgBtn.addEventListener('click', function () { self.openOrgForm(); });
       this.els.orgFormSubmit.addEventListener('click', function () { self.saveOrg(); });
       this.els.fOrgName.addEventListener('keydown', function (e) {
@@ -611,14 +641,6 @@
         return '<button class="chip' + (isActive ? ' active' : '') + '" data-status="' + escapeHtml(s) + '" ' + style + '>' +
           escapeHtml(s) + ' (' + count.toLocaleString() + ')</button>';
       }).join('');
-
-      this.els.filterChips.querySelectorAll('.chip').forEach(function (chip) {
-        chip.addEventListener('click', function () {
-          self.state.filter = chip.getAttribute('data-status');
-          self.renderChips();
-          self.renderTasks();
-        });
-      });
     },
 
     relateColorMap: function () {
@@ -689,17 +711,6 @@
       this.els.taskList.innerHTML = filtered.map(function (t) {
         return self.taskCard(t, relMap[t.row] || '');
       }).join('');
-
-      this.els.taskList.querySelectorAll('.row-btn.edit').forEach(function (b) {
-        b.addEventListener('click', function () {
-          self.openForm(Number(b.getAttribute('data-row')));
-        });
-      });
-      this.els.taskList.querySelectorAll('.row-btn.del').forEach(function (b) {
-        b.addEventListener('click', function () {
-          self.openDelete(Number(b.getAttribute('data-row')));
-        });
-      });
     },
 
     taskCard: function (t, relClass) {
@@ -740,18 +751,16 @@
     },
 
     isOverdue: function (t) {
-      if (!t['Due Date']) return false;
-      var s = String(t.Status || '').toLowerCase();
+      var due = this.isoDate(t['Due Date']);
+      if (!due) return false;
+      var s = String(t.Status || '').trim().toLowerCase();
       if (s === 'done' || s === 'completed' || s === 'cancelled') return false;
-      var d = new Date(t['Due Date'] + 'T23:59:59');
-      if (isNaN(d)) return false;
-      return d.getTime() < Date.now();
+      return due < this.todayGMT7();
     },
 
     /* ---------------- organisations ---------------- */
 
     renderOrganizations: function () {
-      var self = this;
       var q = (this.els.orgSearch.value || '').trim().toLowerCase();
       var list = this.state.organizations.filter(function (o) {
         if (!q) return true;
@@ -780,17 +789,6 @@
         '</div>';
       }).join('');
       this.els.orgList.innerHTML = html;
-
-      this.els.orgList.querySelectorAll('.row-btn.edit').forEach(function (b) {
-        b.addEventListener('click', function () {
-          self.openOrgForm(Number(b.getAttribute('data-row')), b.getAttribute('data-name'), b.getAttribute('data-desc'));
-        });
-      });
-      this.els.orgList.querySelectorAll('.row-btn.del').forEach(function (b) {
-        b.addEventListener('click', function () {
-          self.openOrgDelete(Number(b.getAttribute('data-row')), b.getAttribute('data-name'));
-        });
-      });
     },
 
     openOrgForm: function (row, name, desc) {
@@ -858,19 +856,27 @@
 
     /* ---------------- formatting ---------------- */
 
-    fmtDate: function (iso) {
-      if (!iso) return '';
-      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
-      if (m) return m[3] + '-' + this.MONTHS[Number(m[2]) - 1] + '-' + String(Number(m[1]) % 100);
-      var d = new Date(iso);
-      if (isNaN(d)) return String(iso);
-      return ('0' + d.getDate()).slice(-2) + '-' + this.MONTHS[d.getMonth()] + '-' + String(d.getFullYear() % 100);
+    /* Normalises any date-ish value to a calendar date key (YYYY-MM-DD) without
+     * ever going through the device timezone. Returns '' when unrecognisable. */
+    isoDate: function (value) {
+      if (!value) return '';
+      if (value instanceof Date && !isNaN(value.getTime())) {
+        return new Date(value.getTime() + GMT7_OFFSET_MS).toISOString().slice(0, 10);
+      }
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value).trim());
+      return m ? m[1] + '-' + m[2] + '-' + m[3] : '';
     },
 
+    fmtDate: function (iso) {
+      var key = this.isoDate(iso);
+      if (!key) return iso ? String(iso) : '';
+      var parts = key.split('-');
+      return parts[2] + '-' + this.MONTHS[Number(parts[1]) - 1] + '-' + String(Number(parts[0]) % 100);
+    },
+
+    /* Current calendar date in GMT+7, independent of the device timezone. */
     todayGMT7: function () {
-      var now = new Date();
-      var gmt7 = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 7 * 3600000);
-      return gmt7.toISOString().slice(0, 10);
+      return new Date(Date.now() + GMT7_OFFSET_MS).toISOString().slice(0, 10);
     },
 
     formatValue: function (v) {
@@ -1420,6 +1426,19 @@
       if (key && !seen[key]) { seen[key] = true; out.push(v); }
     });
     return out;
+  }
+
+  function debounce(fn, wait) {
+    var timer = null;
+    return function () {
+      var ctx = this;
+      var args = arguments;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () {
+        timer = null;
+        fn.apply(ctx, args);
+      }, wait);
+    };
   }
 
   function metaTag(kind, value) {

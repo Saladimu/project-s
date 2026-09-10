@@ -187,6 +187,28 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-09-10 - Timezone-safe date handling (GMT+7)
+
+- All calendar-date logic now flows through a fixed **GMT+7** offset instead of the device
+  timezone. Added `isoDate()` (normalises any date-ish value to a `YYYY-MM-DD` key) and rewrote
+  `todayGMT7()`, `fmtDate()`, and `isOverdue()`. Overdue checks compare calendar-date keys, so a
+  task is "Overdue" at the end of its due day in GMT+7 regardless of where the device is.
+- Backend (`Code.gs`) no longer uses `Date.toISOString()` for sheet date cells (which shifts the
+  day for non-UTC timezones); it formats in the spreadsheet timezone and parses `M/D/YYYY`
+  strings by components. Writes build dates at local noon, and backup sheet names use the
+  spreadsheet timezone. Demo backup names are generated in GMT+7.
+- Verified identical results under `America/New_York`, `Asia/Jakarta`, and `Pacific/Kiritimati`.
+
+### 2026-09-10 - Performance: batched reads and delegated events
+
+- **Backend**: `Code.gs` reads whole ranges in one call instead of cell-by-cell in loops
+  (`getOrganizations_`, `addOrg_` max-No scan, `firstEmptyDataRow_`, `nextNo_`). This removes
+  the N+1 `getRange().getValue()` pattern that dominated latency on larger sheets.
+- **Frontend**: task list, organisation list, and status filter chips now use a single delegated
+  `click` listener each instead of re-binding a listener per button on every render. Search
+  inputs (`Task` and `Organization`) are debounced 150 ms. Typing no longer rebuilds + rebinds
+  listeners on every keystroke.
+
 ### 2026-09-08 - Organization description
 
 - The Organizations view now supports an optional **Description** per organisation. The

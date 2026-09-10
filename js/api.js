@@ -420,10 +420,10 @@ var ProjectS = (function () {
   }
 
   function demoBackupName() {
-    var now = new Date();
-    var dd = pad2(now.getDate());
-    var mm = pad2(now.getMonth() + 1);
-    var yy = String(now.getFullYear()).slice(-2);
+    var gmt7 = new Date(Date.now() + 7 * 3600000);
+    var dd = pad2(gmt7.getUTCDate());
+    var mm = pad2(gmt7.getUTCMonth() + 1);
+    var yy = String(gmt7.getUTCFullYear()).slice(-2);
     return 'TaskBAK-' + dd + '-' + mm + '-' + yy;
   }
 
