@@ -102,9 +102,10 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Organization** - a dropdown menu fed by the Organization sheet `Name` column (same style
   as the PIC dropdown).
 - **Organizations view** - dedicated maintenance menu to **add / edit / delete** organisations
-  (each with its own confirmation dialog). An organisation that is still referenced by one or
-  more tasks cannot be deleted or **renamed** (checked in the app and again in the backend);
-  its description can still be edited. Reassign the tasks first.
+  (each with its own confirmation dialog). Names must be unique (case-insensitive), an
+  organisation still referenced by one or more tasks cannot be deleted or **renamed** (checked
+  in the app and again in the backend); its description can still be edited. Reassign the tasks
+  first.
 - **Duration** - display-only (read-only) field; the value is computed by the sheet's formula.
   When a new task is added, the `Duration` formula is copied down from the previous row (via
   `PASTE_FORMULA`, so relative references stay dynamic). After a wipe/restore the formula is
@@ -188,6 +189,13 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-10 - Block duplicate organisation names
+
+- Adding an organisation now rejects a name that already exists (case-insensitive, trimmed) with
+  `Organization "X" already exists.` The same check applies when renaming an existing
+  organisation (excluding its own row). Enforced in the app, the demo data layer, and `Code.gs`
+  (`addOrg_` / `updateOrg_`).
 
 ### 2026-09-10 - Lock in-use organisation names (rename protection)
 

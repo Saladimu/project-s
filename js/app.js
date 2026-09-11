@@ -402,6 +402,15 @@
       });
     },
 
+    orgNameExists: function (name, exceptRow) {
+      var target = String(name || '').trim().toLowerCase();
+      if (!target) return false;
+      return this.state.organizations.some(function (o) {
+        if (exceptRow && Number(o.row) === Number(exceptRow)) return false;
+        return String(o.Name || '').trim().toLowerCase() === target;
+      });
+    },
+
     taskIdOptions: function () {
       var seen = {};
       var byId = {};
@@ -837,6 +846,10 @@
       var desc = this.els.fOrgDesc.value.trim();
       if (!name) {
         this.toast('Organization name is required.', true);
+        return;
+      }
+      if (this.orgNameExists(name, this.state.editingOrgRow)) {
+        this.toast('Organization "' + name + '" already exists.', true);
         return;
       }
       if (this.state.editingOrgRow) {

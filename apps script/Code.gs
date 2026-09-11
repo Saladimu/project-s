@@ -313,6 +313,18 @@ function getOrganizations_() {
   return out;
 }
 
+/** True when another organisation (optionally excluding one row) uses this name. */
+function orgNameExists_(name, exceptRow) {
+  var target = String(name || '').trim().toLowerCase();
+  if (!target) return false;
+  var orgs = getOrganizations_();
+  for (var i = 0; i < orgs.length; i++) {
+    if (exceptRow && Number(orgs[i].row) === Number(exceptRow)) continue;
+    if (String(orgs[i].Name || '').trim().toLowerCase() === target) return true;
+  }
+  return false;
+}
+
 function addOrg_(params) {
   var sheet = getOrgSheet_();
   if (!sheet) throw new Error('Organization sheet not found');
@@ -320,6 +332,7 @@ function addOrg_(params) {
   if (!name) throw new Error('Name is required');
   var layout = orgLayout_(sheet);
   if (layout.nameIdx === -1) throw new Error('Organization sheet needs a "' + CONFIG.ORG_COLUMN + '" column');
+  if (orgNameExists_(name)) throw new Error('Organization "' + name + '" already exists.');
 
   var nextNo = 1;
   if (layout.noIdx >= 0) {
@@ -353,9 +366,10 @@ function updateOrg_(params) {
   var layout = orgLayout_(sheet);
   if (layout.nameIdx === -1) throw new Error('Organization sheet needs a "' + CONFIG.ORG_COLUMN + '" column');
   var current = String(sheet.getRange(rowNum, layout.nameIdx + 1).getValue() || '').trim();
-  if (current && current.toLowerCase() !== name.toLowerCase()) {
+  if (current.toLowerCase() !== name.toLowerCase()) {
+    if (orgNameExists_(name, rowNum)) throw new Error('Organization "' + name + '" already exists.');
     var inUse = countTasksForOrg_(current);
-    if (inUse > 0) {
+    if (current && inUse > 0) {
       throw new Error('Cannot rename "' + current + '": it is used by ' + inUse + ' task' +
         (inUse > 1 ? 's' : '') + '. Reassign them first.');
     }

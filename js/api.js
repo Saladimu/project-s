@@ -113,6 +113,10 @@ var ProjectS = (function () {
           case 'addOrg':
             var orgName = String(params.name || '').trim();
             var orgDesc = String(params.description || '').trim();
+            if (orgNameTaken(orgName)) {
+              result = { ok: false, error: 'Organization "' + orgName + '" already exists.' };
+              break;
+            }
             var lastOrg = state.organizations[state.organizations.length - 1];
             var nextNo = lastOrg ? Number(lastOrg.No) + 1 : 1;
             var orgRow = lastOrg ? lastOrg.row + 1 : 2;
@@ -126,6 +130,10 @@ var ProjectS = (function () {
             }
             var newOrgName = String(params.name || '').trim();
             if (updOrg && updOrg.Name.toLowerCase() !== newOrgName.toLowerCase()) {
+              if (orgNameTaken(newOrgName, updOrg.row)) {
+                result = { ok: false, error: 'Organization "' + newOrgName + '" already exists.' };
+                break;
+              }
               var renameUse = 0;
               for (var ri = 0; ri < state.tasks.length; ri++) {
                 if (String(state.tasks[ri].Organization || '').trim().toLowerCase() === updOrg.Name.toLowerCase()) renameUse++;
@@ -440,6 +448,15 @@ var ProjectS = (function () {
       if (key && !seen[key]) { seen[key] = true; out.push(v); }
     });
     return out;
+  }
+
+  function orgNameTaken(name, exceptRow) {
+    var target = String(name || '').trim().toLowerCase();
+    if (!target) return false;
+    return state.organizations.some(function (o) {
+      if (exceptRow && Number(o.row) === Number(exceptRow)) return false;
+      return String(o.Name || '').trim().toLowerCase() === target;
+    });
   }
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
