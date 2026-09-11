@@ -352,9 +352,37 @@ function updateOrg_(params) {
   if (!name) throw new Error('Name is required');
   var layout = orgLayout_(sheet);
   if (layout.nameIdx === -1) throw new Error('Organization sheet needs a "' + CONFIG.ORG_COLUMN + '" column');
+  var current = String(sheet.getRange(rowNum, layout.nameIdx + 1).getValue() || '').trim();
+  if (current && current.toLowerCase() !== name.toLowerCase()) {
+    var inUse = countTasksForOrg_(current);
+    if (inUse > 0) {
+      throw new Error('Cannot rename "' + current + '": it is used by ' + inUse + ' task' +
+        (inUse > 1 ? 's' : '') + '. Reassign them first.');
+    }
+  }
   sheet.getRange(rowNum, layout.nameIdx + 1).setValue(name);
   if (layout.descIdx >= 0) sheet.getRange(rowNum, layout.descIdx + 1).setValue(String(params.description || '').trim());
   return { ok: true };
+}
+
+/** Counts tasks whose Organization column matches the given organisation name
+ *  (case-insensitive, trimmed). Used to block deleting an in-use organisation. */
+function countTasksForOrg_(orgName) {
+  var target = String(orgName || '').trim().toLowerCase();
+  if (!target) return 0;
+  var taskSheet = getTaskSheet_();
+  var headers = getHeaders_(taskSheet);
+  var orgCol = -1;
+  for (var h = 0; h < headers.length; h++) {
+    if (String(headers[h]).trim().toLowerCase() === 'organization') { orgCol = h; break; }
+  }
+  if (orgCol === -1) return 0;
+  var tasks = readTasks_(taskSheet, headers);
+  var count = 0;
+  for (var i = 0; i < tasks.length; i++) {
+    if (String(tasks[i][headers[orgCol]] || '').trim().toLowerCase() === target) count++;
+  }
+  return count;
 }
 
 function deleteOrg_(params) {
@@ -362,6 +390,15 @@ function deleteOrg_(params) {
   var rowNum = Number(params.row);
   if (!sheet) throw new Error('Organization sheet not found');
   if (!rowNum || rowNum <= 1) throw new Error('Invalid row');
+  var layout = orgLayout_(sheet);
+  var name = layout.nameIdx >= 0
+    ? String(sheet.getRange(rowNum, layout.nameIdx + 1).getValue() || '').trim()
+    : '';
+  var inUse = countTasksForOrg_(name);
+  if (inUse > 0) {
+    throw new Error('Cannot delete "' + name + '": it is used by ' + inUse + ' task' +
+      (inUse > 1 ? 's' : '') + '. Reassign them first.');
+  }
   sheet.deleteRow(rowNum);
   return { ok: true };
 }

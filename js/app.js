@@ -136,6 +136,7 @@
         orgModal: document.getElementById('orgModal'),
         orgFormTitle: document.getElementById('orgFormTitle'),
         fOrgName: document.getElementById('fOrgName'),
+        fOrgNameHint: document.getElementById('fOrgNameHint'),
         fOrgDesc: document.getElementById('fOrgDesc'),
         orgFormSubmit: document.getElementById('orgFormSubmit'),
         confirmTitle: document.getElementById('confirmTitle'),
@@ -391,6 +392,14 @@
 
     organizationNames: function () {
       return this.state.organizations.map(function (o) { return o.Name; }).filter(Boolean);
+    },
+
+    tasksUsingOrg: function (name) {
+      var target = String(name || '').trim().toLowerCase();
+      if (!target) return [];
+      return this.state.tasks.filter(function (t) {
+        return String(t.Organization || '').trim().toLowerCase() === target;
+      });
     },
 
     taskIdOptions: function () {
@@ -791,13 +800,32 @@
       this.els.orgList.innerHTML = html;
     },
 
+    applyOrgNameLock: function (inUseCount) {
+      var field = this.els.fOrgName;
+      var hint = this.els.fOrgNameHint;
+      if (inUseCount > 0) {
+        field.readOnly = true;
+        field.classList.add('locked-input');
+        hint.textContent = 'Name is locked: ' + inUseCount + ' task' + (inUseCount > 1 ? 's' : '') +
+          ' use this organization. You can still edit the description.';
+        hint.classList.remove('hidden');
+      } else {
+        field.readOnly = false;
+        field.classList.remove('locked-input');
+        hint.textContent = '';
+        hint.classList.add('hidden');
+      }
+    },
+
     openOrgForm: function (row, name, desc) {
       var self = this;
       if (!this.guardWrite()) return;
       this.state.editingOrgRow = row || null;
+      this.state.editingOrgOriginalName = name || '';
       this.els.orgFormTitle.textContent = row ? 'Edit Organization' : 'Add Organization';
       this.els.fOrgName.value = name || '';
       this.els.fOrgDesc.value = desc || '';
+      this.applyOrgNameLock(row ? this.tasksUsingOrg(name).length : 0);
       this.openModal('orgModal');
       setTimeout(function () { self.els.fOrgName.focus(); }, 250);
     },
@@ -810,6 +838,18 @@
       if (!name) {
         this.toast('Organization name is required.', true);
         return;
+      }
+      if (this.state.editingOrgRow) {
+        var original = this.state.editingOrgOriginalName || '';
+        if (name.toLowerCase() !== original.toLowerCase()) {
+          var inUse = this.tasksUsingOrg(original).length;
+          if (inUse > 0) {
+            this.toast('Cannot rename "' + original + '": it is used by ' + inUse + ' task' +
+              (inUse > 1 ? 's' : '') + '. Reassign them first.', true);
+            this.els.fOrgName.value = original;
+            return;
+          }
+        }
       }
       this.setBusy(true);
       var action = this.state.editingOrgRow ? 'updateOrg' : 'addOrg';
@@ -824,6 +864,7 @@
         }
         self.closeModal('orgModal');
         self.state.editingOrgRow = null;
+        self.state.editingOrgOriginalName = null;
         self.toast('Organization saved', false, true);
         self.refresh();
       });
@@ -831,7 +872,14 @@
 
     openOrgDelete: function (row, name) {
       if (!this.guardWrite()) return;
+      var used = this.tasksUsingOrg(name);
+      if (used.length) {
+        this.toast('Cannot delete "' + name + '": it is used by ' + used.length + ' task' +
+          (used.length > 1 ? 's' : '') + '. Reassign them first.', true);
+        return;
+      }
       this.state.editingOrgRow = row;
+      this.state.editingOrgName = name;
       this.state.deleteKind = 'org';
       this.els.confirmTitle.textContent = 'Delete Organization';
       this.els.confirmText.textContent = 'Delete "' + name + '"? This cannot be undone.';
@@ -840,6 +888,14 @@
 
     doDeleteOrg: function () {
       var self = this;
+      var name = this.state.editingOrgName;
+      var used = this.tasksUsingOrg(name);
+      if (used.length) {
+        this.toast('Cannot delete "' + name + '": it is used by ' + used.length + ' task' +
+          (used.length > 1 ? 's' : '') + '. Reassign them first.', true);
+        this.closeModal('confirmModal');
+        return;
+      }
       this.setBusy(true);
       ProjectS.call('deleteOrg', { action: 'deleteOrg', row: this.state.editingOrgRow }, 'POST').then(function (res) {
         self.setBusy(false);
@@ -849,6 +905,7 @@
         }
         self.closeModal('confirmModal');
         self.state.editingOrgRow = null;
+        self.state.editingOrgName = null;
         self.toast('Organization deleted', false, true);
         self.refresh();
       });

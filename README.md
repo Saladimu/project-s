@@ -102,7 +102,9 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 - **Organization** - a dropdown menu fed by the Organization sheet `Name` column (same style
   as the PIC dropdown).
 - **Organizations view** - dedicated maintenance menu to **add / edit / delete** organisations
-  (each with its own confirmation dialog).
+  (each with its own confirmation dialog). An organisation that is still referenced by one or
+  more tasks cannot be deleted or **renamed** (checked in the app and again in the backend);
+  its description can still be edited. Reassign the tasks first.
 - **Duration** - display-only (read-only) field; the value is computed by the sheet's formula.
   When a new task is added, the `Duration` formula is copied down from the previous row (via
   `PASTE_FORMULA`, so relative references stay dynamic). After a wipe/restore the formula is
@@ -186,6 +188,20 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-10 - Lock in-use organisation names (rename protection)
+
+- Editing an organisation that is referenced by one or more tasks now locks the **Name** field
+  (read-only, with an inline hint saying how many tasks use it); the **Description** stays
+  editable. If a rename is attempted anyway, it is blocked with a message. Enforced in the app,
+  in the demo data layer, and in `Code.gs` `updateOrg_`.
+
+### 2026-09-10 - Protect in-use organisations from deletion
+
+- Deleting an organisation now checks whether any task still uses it (matching the task's
+  `Organization` field, case-insensitive). If so, the delete is blocked with a message stating
+  how many tasks reference it. Enforced in the app before the confirm dialog, in the demo data
+  layer, and again in `Code.gs` `deleteOrg_` so direct API calls are covered too.
 
 ### 2026-09-10 - Timezone-safe date handling (GMT+7)
 

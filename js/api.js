@@ -120,14 +120,48 @@ var ProjectS = (function () {
             result = { ok: true, row: orgRow, No: nextNo, Name: orgName, Description: orgDesc };
             break;
           case 'updateOrg':
-            state.organizations.forEach(function (o) {
-              if (o.row === Number(params.row)) {
-                o.Name = String(params.name || '').trim();
-                o.Description = String(params.description || '').trim();
+            var updOrg = null;
+            for (var ui = 0; ui < state.organizations.length; ui++) {
+              if (state.organizations[ui].row === Number(params.row)) { updOrg = state.organizations[ui]; break; }
+            }
+            var newOrgName = String(params.name || '').trim();
+            if (updOrg && updOrg.Name.toLowerCase() !== newOrgName.toLowerCase()) {
+              var renameUse = 0;
+              for (var ri = 0; ri < state.tasks.length; ri++) {
+                if (String(state.tasks[ri].Organization || '').trim().toLowerCase() === updOrg.Name.toLowerCase()) renameUse++;
               }
-            });
+              if (renameUse > 0) {
+                result = {
+                  ok: false,
+                  error: 'Cannot rename "' + updOrg.Name + '": it is used by ' + renameUse + ' task' +
+                    (renameUse > 1 ? 's' : '') + '. Reassign them first.'
+                };
+                break;
+              }
+            }
+            if (updOrg) {
+              updOrg.Name = newOrgName;
+              updOrg.Description = String(params.description || '').trim();
+            }
             break;
           case 'deleteOrg':
+            var delOrg = null;
+            for (var oi = 0; oi < state.organizations.length; oi++) {
+              if (state.organizations[oi].row === Number(params.row)) { delOrg = state.organizations[oi]; break; }
+            }
+            var delKey = delOrg ? String(delOrg.Name || '').trim().toLowerCase() : '';
+            var orgInUse = 0;
+            for (var ti = 0; ti < state.tasks.length; ti++) {
+              if (String(state.tasks[ti].Organization || '').trim().toLowerCase() === delKey) orgInUse++;
+            }
+            if (orgInUse > 0) {
+              result = {
+                ok: false,
+                error: 'Cannot delete "' + delOrg.Name + '": it is used by ' + orgInUse + ' task' +
+                  (orgInUse > 1 ? 's' : '') + '. Reassign them first.'
+              };
+              break;
+            }
             state.organizations = state.organizations.filter(function (o) { return o.row !== Number(params.row); });
             break;
           case 'backup':
