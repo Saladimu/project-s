@@ -110,6 +110,12 @@
         confirmPwd2: document.getElementById('confirmPwd2'),
         changePwdBtn: document.getElementById('changePwdBtn'),
         pwdBlock: document.getElementById('pwdBlock'),
+        connToggle: document.getElementById('connToggle'),
+        connBody: document.getElementById('connBody'),
+        dbToggle: document.getElementById('dbToggle'),
+        dbBody: document.getElementById('dbBody'),
+        pwdToggle: document.getElementById('pwdToggle'),
+        pwdBody: document.getElementById('pwdBody'),
         aboutText: document.getElementById('aboutText'),
         fab: document.getElementById('fab'),
         taskModal: document.getElementById('taskModal'),
@@ -149,6 +155,7 @@
       this.els.apiUrl.value = '';
       this.bindEvents();
       this.initTheme();
+      this.initSettingsPanels();
       this.applySecurityState();
       this.renderInternalFilter();
 
@@ -174,6 +181,34 @@
       var dark = document.documentElement.getAttribute('data-theme') === 'dark';
       if (meta) meta.setAttribute('content', dark ? '#111827' : '#f2f4f9');
       this.els.themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    },
+
+    /* ---------------- settings submenu toggles ---------------- */
+
+    initSettingsPanels: function () {
+      var self = this;
+      var panels = [
+        { key: 'conn', label: 'Google Sheets Connection', toggle: this.els.connToggle, body: this.els.connBody },
+        { key: 'db', label: 'Database', toggle: this.els.dbToggle, body: this.els.dbBody },
+        { key: 'pwd', label: 'Change Password', toggle: this.els.pwdToggle, body: this.els.pwdBody }
+      ];
+      panels.forEach(function (p) {
+        if (!p.toggle || !p.body) return;
+        var open = false;
+        try { open = localStorage.getItem('ps_panel_' + p.key) === '1'; } catch (e) {}
+        self.setPanelOpen(p, open);
+        p.toggle.addEventListener('click', function () {
+          var next = p.toggle.getAttribute('aria-checked') !== 'true';
+          self.setPanelOpen(p, next);
+          try { localStorage.setItem('ps_panel_' + p.key, next ? '1' : '0'); } catch (e) {}
+        });
+      });
+    },
+
+    setPanelOpen: function (p, open) {
+      p.toggle.setAttribute('aria-checked', open ? 'true' : 'false');
+      p.toggle.setAttribute('aria-label', (open ? 'Hide ' : 'Show ') + p.label);
+      p.body.classList.toggle('collapsed', !open);
     },
 
     /* ---------------- events ---------------- */

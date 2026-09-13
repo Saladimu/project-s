@@ -190,6 +190,14 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-09-10 - Collapsible Settings submenus
+
+- Google Sheets Connection, Database, and Change Password now each have a clean on/off toggle in
+  their header to expand/collapse the panel. Toggles are collapsed by default and the open/closed
+  state is remembered per section in `localStorage`. The Security card and lock behavior are
+  unchanged; the submenus still hide entirely while Settings is locked. Bumped the service
+  worker cache to `project-s-v3` so the new markup is picked up.
+
 ### 2026-09-10 - Block duplicate organisation names
 
 - Adding an organisation now rejects a name that already exists (case-insensitive, trimmed) with

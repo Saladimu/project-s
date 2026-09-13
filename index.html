@@ -7,7 +7,7 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="css/styles.css?v=42">
+  <link rel="stylesheet" href="css/styles.css?v=43">
   <script>
     (function () {
       var saved;
@@ -227,7 +227,13 @@
       </div>
 
       <div class="card-block conn-block" id="connBlock">
-        <h3 class="block-title">Google Sheets Connection</h3>
+        <div class="block-head">
+          <h3 class="block-title">Google Sheets Connection</h3>
+          <button class="toggle" id="connToggle" type="button" role="switch" aria-checked="false" aria-controls="connBody" aria-label="Show Google Sheets Connection">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </button>
+        </div>
+        <div class="block-body collapsed" id="connBody">
 
         <label class="field-label" for="sheetUrl">Spreadsheet URL (live read)</label>
         <input id="sheetUrl" type="url" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/..." autocomplete="off">
@@ -240,10 +246,17 @@
           <button id="saveBtn" class="btn btn-secondary">Save</button>
         </div>
         <div id="connStatus" class="conn-status"></div>
+        </div>
       </div>
 
       <div class="card-block db-block" id="dbBlock">
-        <h3 class="block-title">Database</h3>
+        <div class="block-head">
+          <h3 class="block-title">Database</h3>
+          <button class="toggle" id="dbToggle" type="button" role="switch" aria-checked="false" aria-controls="dbBody" aria-label="Show Database">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </button>
+        </div>
+        <div class="block-body collapsed" id="dbBody">
         <p class="muted">Back up, restore or wipe the TaskList sheet.</p>
 
         <div class="btn-row">
@@ -254,10 +267,17 @@
           <button id="wipeBtn" class="btn btn-danger">Wipe All Data</button>
         </div>
         <div id="dbStatus" class="conn-status"></div>
+        </div>
       </div>
 
       <div class="card-block pwd-block" id="pwdBlock">
-        <h3 class="block-title">Change Password</h3>
+        <div class="block-head">
+          <h3 class="block-title">Change Password</h3>
+          <button class="toggle" id="pwdToggle" type="button" role="switch" aria-checked="false" aria-controls="pwdBody" aria-label="Show Change Password">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </button>
+        </div>
+        <div class="block-body collapsed" id="pwdBody">
         <p class="muted">Update the password that protects Settings.</p>
         <label class="field-label" for="oldPwd">Current password</label>
         <input id="oldPwd" type="password" autocomplete="current-password" placeholder="Current password">
@@ -266,6 +286,7 @@
         <input id="confirmPwd2" type="password" autocomplete="new-password" placeholder="Confirm new password">
         <div class="btn-row">
           <button id="changePwdBtn" class="btn btn-primary">Change Password</button>
+        </div>
         </div>
       </div>
 
@@ -464,7 +485,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=24"></script>
-  <script src="js/app.js?v=44"></script>
+  <script src="js/app.js?v=45"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(function () {});

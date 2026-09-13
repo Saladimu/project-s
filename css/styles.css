@@ -469,6 +469,51 @@ main {
   letter-spacing: 0.8px;
 }
 
+.block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.block-head .block-title { margin: 0; }
+.block-body { margin-top: 12px; }
+.block-body.collapsed { display: none; }
+
+.toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  flex: none;
+  line-height: 0;
+}
+.toggle-track {
+  display: block;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  position: relative;
+  transition: background 0.2s ease;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+  transition: transform 0.2s ease;
+}
+.toggle[aria-checked="true"] .toggle-track { background: var(--primary); }
+.toggle[aria-checked="true"] .toggle-thumb { transform: translateX(18px); }
+.toggle:focus-visible .toggle-track { outline: 2px solid var(--primary); outline-offset: 2px; }
+[data-theme="dark"] .toggle-thumb { background: #e6eaf3; }
+
 /* Status bars */
 .status-bars { display: flex; flex-direction: column; gap: 12px; }
 .sb-row {

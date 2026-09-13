@@ -1,5 +1,5 @@
 /* Project S - service worker: cache static assets for fast offline-ish loading. */
-var CACHE_NAME = 'project-s-v2';
+var CACHE_NAME = 'project-s-v3';
 var ASSETS = [
   './',
   './index.html',
