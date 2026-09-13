@@ -84,11 +84,13 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   cache still paints the UI first, then revalidates in the background. Duplicate in-flight reads
   are coalesced; add / edit / delete (and other writes) invalidate the cache so the next load
   hits the network. A **service worker** (`sw.js`) keeps the app fresh: navigations and the HTML
-  shell are fetched **network-first** (falling back to cache offline), while versioned CSS/JS and
-  images are **cache-first**. The worker script itself is registered with `updateViaCache: 'none'`
-  so the browser never serves `sw.js` from its HTTP cache, and a "new version is ready" prompt
-  appears when an updated worker takes control. This means a deploy shows up after a single reload
-  instead of being masked by stale caches.
+  shell are fetched **network-first** with a 3s cap, so a slow/flaky connection falls back to the
+  cached shell instead of stalling (the request still completes and refreshes the cache in the
+  background). Versioned CSS/JS and images are **cache-first**, so repeat visits load instantly with
+  no network round-trip for assets. The worker script itself is registered with
+  `updateViaCache: 'none'` so the browser never serves `sw.js` from its HTTP cache, and a
+  "new version is ready" prompt appears when an updated worker takes control. This means a deploy
+  shows up after a single reload instead of being masked by stale caches.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.
@@ -197,8 +199,13 @@ Then open `http://localhost:8000/` in a browser.
 ### 2026-09-13 - Fresh deploys without cache-stale tricks
 
 - Hard refreshes no longer leave an old build on screen. `sw.js` now serves navigations and the
-  HTML shell **network-first** (cache only as an offline fallback) and keeps **cache-first** for
-  versioned CSS/JS and images. Cache bumped to `project-s-v4`.
+  HTML shell **network-first** with a **3s cap** (cache as fallback, and the request keeps running
+  to refresh the cache), while versioned CSS/JS and images stay **cache-first** for instant repeat
+  loads. Cache bumped to `project-s-v5`.
+- Removed the versioned CSS/JS from the install precache. They were stored under their unversioned
+  URL while the page requests `?v=..`, so the install re-downloaded assets the page had already
+  fetched. Only unversioned shell files (`./`, `index.html`, images) are precached now, and each
+  `?v=` asset is cached once on first use.
 - The worker is registered with `updateViaCache: 'none'` (`index.html`) so the browser can never
   serve `sw.js` from its HTTP cache (`max-age=600` on GitHub Pages, `max-age=14400` on the Cloudflare
   preview).
