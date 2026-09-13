@@ -485,11 +485,20 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=24"></script>
-  <script src="js/app.js?v=45"></script>
+  <script src="js/app.js?v=46"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
-    }
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      var hadController = !!navigator.serviceWorker.controller;
+      var notified = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (!hadController || notified) return;
+        notified = true;
+        window.__appUpdateReady = true;
+        document.dispatchEvent(new CustomEvent('app:update-ready'));
+      });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () {});
+    })();
   </script>
 </body>
 </html>

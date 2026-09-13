@@ -1,6 +1,8 @@
-/* Project S - service worker: cache static assets for fast offline-ish loading. */
-var CACHE_NAME = 'project-s-v3';
-var ASSETS = [
+/* Project S - service worker.
+ * Freshness-first: navigations/HTML are network-first (so deploys show up after
+ * a single reload), while versioned static assets are cache-first. */
+var CACHE_NAME = 'project-s-v4';
+var PRECACHE = [
   './',
   './index.html',
   './css/styles.css',
@@ -14,7 +16,7 @@ var ASSETS = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(ASSETS);
+      return cache.addAll(PRECACHE);
     }).then(function () {
       return self.skipWaiting();
     })
@@ -33,26 +35,54 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+function isHtmlOrNavigation(request) {
+  if (request.mode === 'navigate') return true;
+  var accept = request.headers.get('accept') || '';
+  if (accept.indexOf('text/html') !== -1) return true;
+  var path = new URL(request.url).pathname;
+  return path.charAt(path.length - 1) === '/' || /\.html?$/.test(path);
+}
+
+function putInCache(request, response) {
+  if (response && response.status === 200 && response.type === 'basic') {
+    var copy = response.clone();
+    caches.open(CACHE_NAME).then(function (cache) { cache.put(request, copy); });
+  }
+}
+
+function networkFirst(request) {
+  return fetch(request).then(function (response) {
+    putInCache(request, response);
+    return response;
+  }).catch(function () {
+    return caches.match(request).then(function (cached) {
+      if (cached) return cached;
+      if (isHtmlOrNavigation(request)) return caches.match('./index.html');
+      return Response.error();
+    });
+  });
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then(function (cached) {
+    if (cached) return cached;
+    return fetch(request).then(function (response) {
+      putInCache(request, response);
+      return response;
+    });
+  });
+}
+
 self.addEventListener('fetch', function (event) {
-  var url = event.request.url;
-  if (event.request.method !== 'GET') return;
+  var request = event.request;
+  var url = request.url;
+  if (request.method !== 'GET') return;
   if (url.indexOf('docs.google.com') !== -1) return;
   if (url.indexOf('script.google.com') !== -1) return;
 
-  event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      var network = fetch(event.request).then(function (response) {
-        if (response && response.status === 200 && response.type === 'basic') {
-          var copy = response.clone();
-          caches.open(CACHE_NAME).then(function (cache) {
-            cache.put(event.request, copy);
-          });
-        }
-        return response;
-      }).catch(function () {
-        return cached;
-      });
-      return cached || network;
-    })
-  );
+  var parsed;
+  try { parsed = new URL(url); } catch (e) { return; }
+  if (parsed.origin !== self.location.origin) return;
+
+  event.respondWith(isHtmlOrNavigation(request) ? networkFirst(request) : cacheFirst(request));
 });

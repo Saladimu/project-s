@@ -339,6 +339,9 @@
       this.els.sheetUrl.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') self.saveConfig();
       });
+
+      document.addEventListener('app:update-ready', function () { self.showUpdatePrompt(); });
+      if (window.__appUpdateReady) setTimeout(function () { self.showUpdatePrompt(); }, 0);
     },
 
     switchView: function (name) {
@@ -1191,12 +1194,25 @@
       return this.doDelete();
     },
 
-    askConfirm: function (title, text, action, btnLabel) {
+    askConfirm: function (title, text, action, btnLabel, variant) {
       this.state.confirmAction = action;
       this.els.confirmTitle.textContent = title;
       this.els.confirmText.textContent = text;
       this.els.confirmDelete.textContent = btnLabel || 'Delete';
+      this.els.confirmDelete.className = 'btn ' + (variant === 'primary' ? 'btn-primary' : 'btn-danger');
       this.openModal('confirmModal');
+    },
+
+    showUpdatePrompt: function () {
+      if (this.state.updatePrompted) return;
+      this.state.updatePrompted = true;
+      this.askConfirm(
+        'Update available',
+        'A new version of Project S is ready. Reload now to get the latest?',
+        function () { window.location.reload(); },
+        'Reload',
+        'primary'
+      );
     },
 
     doDelete: function () {

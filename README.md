@@ -83,8 +83,12 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   Fresh cache is served immediately and **skips the Google Sheet / Apps Script request**. Stale
   cache still paints the UI first, then revalidates in the background. Duplicate in-flight reads
   are coalesced; add / edit / delete (and other writes) invalidate the cache so the next load
-  hits the network. A **service worker** (`sw.js`) caches the static assets (HTML, CSS, JS,
-  images) so repeat visits load near-instantly and stay usable when offline.
+  hits the network. A **service worker** (`sw.js`) keeps the app fresh: navigations and the HTML
+  shell are fetched **network-first** (falling back to cache offline), while versioned CSS/JS and
+  images are **cache-first**. The worker script itself is registered with `updateViaCache: 'none'`
+  so the browser never serves `sw.js` from its HTTP cache, and a "new version is ready" prompt
+  appears when an updated worker takes control. This means a deploy shows up after a single reload
+  instead of being masked by stale caches.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.
@@ -189,6 +193,17 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-13 - Fresh deploys without cache-stale tricks
+
+- Hard refreshes no longer leave an old build on screen. `sw.js` now serves navigations and the
+  HTML shell **network-first** (cache only as an offline fallback) and keeps **cache-first** for
+  versioned CSS/JS and images. Cache bumped to `project-s-v4`.
+- The worker is registered with `updateViaCache: 'none'` (`index.html`) so the browser can never
+  serve `sw.js` from its HTTP cache (`max-age=600` on GitHub Pages, `max-age=14400` on the Cloudflare
+  preview).
+- When an updated worker activates, the app shows an **Update available / Reload** prompt instead of
+  silently running the previous version. `js/app.js` bumped to `?v=46`.
 
 ### 2026-09-10 - Collapsible Settings submenus
 
