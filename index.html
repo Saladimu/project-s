@@ -7,6 +7,9 @@
   <meta name="description" content="Project S - Task data entry and dashboard, backed by Google Sheets.">
   <title>Project S - Task Manager</title>
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://docs.google.com" crossorigin>
+  <link rel="dns-prefetch" href="https://docs.google.com">
+  <link rel="dns-prefetch" href="https://script.google.com">
   <link rel="stylesheet" href="css/styles.css?v=43">
   <script>
     (function () {
@@ -91,7 +94,7 @@
 
   <header class="app-header">
     <div class="brand-group">
-      <img class="logo" src="pro-s.jpg" alt="Project S logo">
+      <img class="logo" src="pro-s.jpg" alt="Project S logo" decoding="async">
       <div class="brand">Project&nbsp;<span>S</span></div>
       <div class="brand-badge" title="Task tracker" aria-hidden="true">
         <svg class="icon" viewBox="0 0 24 24">
@@ -293,7 +296,7 @@
       <div class="card-block about-card">
         <h3 class="block-title">About</h3>
         <div class="about-block">
-          <img class="about-logo" src="nbpicon.png" alt="NBP icon">
+          <img class="about-logo" src="nbpicon.png" alt="NBP icon" width="56" height="56" loading="lazy" decoding="async">
           <p class="muted" id="aboutText"></p>
         </div>
       </div>
@@ -485,7 +488,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=24"></script>
-  <script src="js/app.js?v=46"></script>
+  <script src="js/app.js?v=47"></script>
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;

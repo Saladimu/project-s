@@ -196,6 +196,22 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-09-13 - Network performance pass
+
+- Added `preconnect` to `docs.google.com` (the gviz read endpoint, used by default) and
+  `dns-prefetch` for `docs.google.com` / `script.google.com`, so the cross-origin Google
+  connection (DNS + TLS) starts while the HTML is still parsing instead of after the first API
+  call.
+- The below-the-fold About image (`nbpicon.png`, ~38 KB) now uses `loading="lazy"` with explicit
+  `width`/`height`, so it is only fetched when Settings is opened and cannot cause layout shift.
+  The header logo uses `decoding="async"`.
+- Verified: production serves gzip; gviz replies `no-store` (so the 5-minute `TaskCache` TTL is the
+  only throttle and reads can never be served stale from the browser); asset timings ~0.4s.
+- `manualRefresh` (`js/app.js`) no longer calls `window.location.reload()`. It already fetched the
+  data and repainted via `applyData`, so the reload was a redundant full page navigation (the
+  service worker was the old reason for it). The refresh spinner is now cleared on success, and the
+  view scrolls to top to match the previous reload behavior. `js/app.js` bumped to `?v=47`.
+
 ### 2026-09-13 - Fresh deploys without cache-stale tricks
 
 - Hard refreshes no longer leave an old build on screen. `sw.js` now serves navigations and the
