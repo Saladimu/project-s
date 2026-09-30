@@ -94,9 +94,11 @@ timezone and never uses `Date.toISOString()` for sheet cells.
 - Reject duplicate organisation names (case-insensitive) and block deleting or
   renaming an organisation still referenced by a task. Enforce the same checks
   in the app, the demo layer, and `Code.gs`.
-- Block deleting a task that other tasks relate to through `Task Relate`
-  (matched against the task's `Task-ID`, case-insensitive). Enforce in the app,
-  the demo layer, and `Code.gs` (`deleteTask_`).
+- Block deleting a task involved in any `Task Relate` relation - either the
+  task has its own `Task Relate` value, or other tasks' `Task Relate` match its
+  `Task-ID` (case-insensitive). The block message names each involved task as
+  `Task-ID - name`. Enforce in the app, the demo layer, and `Code.gs`
+  (`deleteTask_`).
 
 ### Data model
 Task columns: `No | Task-ID | Task name | Task Relate | Purpose | PIC |

@@ -399,21 +399,47 @@ function countTasksForOrg_(orgName) {
   return count;
 }
 
-/** Counts tasks whose "Task Relate" column points at the given Task-ID
+/** Returns the tasks whose "Task Relate" column points at the given Task-ID
  *  (case-insensitive, trimmed), ignoring the row being deleted. Used to block
  *  deleting a task that other tasks still relate to. */
-function countTasksRelatingTo_(taskId, exceptRow) {
+function listTasksRelatingTo_(taskId, exceptRow) {
   var target = String(taskId || '').trim().toLowerCase();
-  if (!target) return 0;
+  if (!target) return [];
   var taskSheet = getTaskSheet_();
   var headers = getHeaders_(taskSheet);
   var tasks = readTasks_(taskSheet, headers);
-  var count = 0;
+  var out = [];
   for (var i = 0; i < tasks.length; i++) {
     if (exceptRow && Number(tasks[i].row) === Number(exceptRow)) continue;
-    if (String(tasks[i]['Task Relate'] || '').trim().toLowerCase() === target) count++;
+    if (String(tasks[i]['Task Relate'] || '').trim().toLowerCase() === target) out.push(tasks[i]);
   }
-  return count;
+  return out;
+}
+
+/** Formats a list of related tasks as "Task-XXX - name; ..." for messages. */
+function describeRelatedTasks_(relaters) {
+  return relaters.map(function (t) {
+    var id = String(t['Task-ID'] || '').trim();
+    var nm = String(t['Task name'] || '').trim();
+    return nm ? (id ? id + ' - ' + nm : nm) : id;
+  }).filter(function (s) { return s; }).join('; ');
+}
+
+/** Formats a single Task-ID reference as "Task-XXX - name" (name looked up in
+ *  the task sheet) for messages. */
+function describeTaskRef_(taskId) {
+  var id = String(taskId || '').trim();
+  if (!id) return '';
+  var taskSheet = getTaskSheet_();
+  var headers = getHeaders_(taskSheet);
+  var tasks = readTasks_(taskSheet, headers);
+  for (var i = 0; i < tasks.length; i++) {
+    if (String(tasks[i]['Task-ID'] || '').trim().toLowerCase() === id.toLowerCase()) {
+      var nm = String(tasks[i]['Task name'] || '').trim();
+      return nm ? id + ' - ' + nm : id;
+    }
+  }
+  return id;
 }
 
 function deleteOrg_(params) {
@@ -533,10 +559,20 @@ function deleteTask_(params) {
   var nameIdx = headers.indexOf('Task name');
   var taskId = idIdx !== -1 ? String(sheet.getRange(rowNum, idIdx + 1).getValue() || '').trim() : '';
   var taskName = nameIdx !== -1 ? String(sheet.getRange(rowNum, nameIdx + 1).getValue() || '').trim() : '';
-  var relaters = countTasksRelatingTo_(taskId, rowNum);
-  if (relaters > 0) {
-    throw new Error('Cannot delete "' + (taskName || taskId) + '": ' + relaters + ' task' +
-      (relaters > 1 ? 's' : '') + ' relate to it. Remove the relation first.');
+  var relateIdx = headers.indexOf('Task Relate');
+  var ownRelate = relateIdx !== -1
+    ? String(sheet.getRange(rowNum, relateIdx + 1).getValue() || '').trim()
+    : '';
+  var relaters = listTasksRelatingTo_(taskId, rowNum);
+  if (ownRelate || relaters.length > 0) {
+    var parts = [];
+    if (ownRelate) parts.push('this task relates to ' + describeTaskRef_(ownRelate));
+    if (relaters.length > 0) {
+      parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
+        ' relate to it (' + describeRelatedTasks_(relaters) + ')');
+    }
+    throw new Error('Cannot delete "' + (taskName || taskId) + '": ' + parts.join(' and ') +
+      '. Remove the relation first.');
   }
   sheet.deleteRow(rowNum);
   return { ok: true };

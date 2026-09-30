@@ -113,18 +113,43 @@ var ProjectS = (function () {
               if (Number(state.tasks[di].row) === Number(params.row)) { delTask = state.tasks[di]; break; }
             }
             var delTaskKey = delTask ? String(delTask['Task-ID'] || '').trim().toLowerCase() : '';
-            var relaterCount = 0;
+            var ownRelate = delTask ? String(delTask['Task Relate'] || '').trim() : '';
+            var relaters = [];
             if (delTaskKey) {
               for (var dri = 0; dri < state.tasks.length; dri++) {
                 if (Number(state.tasks[dri].row) === Number(params.row)) continue;
-                if (String(state.tasks[dri]['Task Relate'] || '').trim().toLowerCase() === delTaskKey) relaterCount++;
+                if (String(state.tasks[dri]['Task Relate'] || '').trim().toLowerCase() === delTaskKey) {
+                  relaters.push(state.tasks[dri]);
+                }
               }
             }
-            if (relaterCount > 0) {
+            var refLabel = function (id) {
+              var key = String(id || '').trim().toLowerCase();
+              var m = null;
+              for (var mi = 0; mi < state.tasks.length; mi++) {
+                if (String(state.tasks[mi]['Task-ID'] || '').trim().toLowerCase() === key) { m = state.tasks[mi]; break; }
+              }
+              var nm = m ? String(m['Task name'] || '').trim() : '';
+              return nm ? String(id).trim() + ' - ' + nm : String(id || '').trim();
+            };
+            var listLabel = function (arr) {
+              return arr.map(function (t) {
+                var id = String(t['Task-ID'] || '').trim();
+                var nm = String(t['Task name'] || '').trim();
+                return nm ? (id ? id + ' - ' + nm : nm) : id;
+              }).filter(Boolean).join('; ');
+            };
+            if (ownRelate || relaters.length) {
+              var parts = [];
+              if (ownRelate) parts.push('this task relates to ' + refLabel(ownRelate));
+              if (relaters.length) {
+                parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
+                  ' relate to it (' + listLabel(relaters) + ')');
+              }
               result = {
                 ok: false,
-                error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '": ' + relaterCount +
-                  ' task' + (relaterCount > 1 ? 's' : '') + ' relate to it. Remove the relation first.'
+                error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '": ' +
+                  parts.join(' and ') + '. Remove the relation first.'
               };
               break;
             }

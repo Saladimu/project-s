@@ -454,6 +454,24 @@
       });
     },
 
+    describeTaskRef: function (taskId) {
+      var target = String(taskId || '').trim();
+      if (!target) return '';
+      var match = this.state.tasks.find(function (t) {
+        return String(t['Task-ID'] || '').trim().toLowerCase() === target.toLowerCase();
+      });
+      var nm = match ? String(match['Task name'] || '').trim() : '';
+      return nm ? target + ' - ' + nm : target;
+    },
+
+    describeTaskList: function (list) {
+      return (list || []).map(function (t) {
+        var id = String(t['Task-ID'] || '').trim();
+        var nm = String(t['Task name'] || '').trim();
+        return nm ? (id ? id + ' - ' + nm : nm) : id;
+      }).filter(Boolean).join('; ');
+    },
+
     orgNameExists: function (name, exceptRow) {
       var target = String(name || '').trim().toLowerCase();
       if (!target) return false;
@@ -1199,13 +1217,20 @@
     blockRelatedTaskDelete: function (task) {
       if (!task) return true;
       var row = Number(task.row);
+      var ownRelate = String(task['Task Relate'] || '').trim();
       var relaters = this.tasksRelatingTo(task['Task-ID']).filter(function (t) {
         return Number(t.row) !== row;
       });
-      if (!relaters.length) return true;
+      if (!ownRelate && !relaters.length) return true;
       var name = task['Task name'] || task['Task-ID'] || 'this task';
-      this.toast('Cannot delete "' + name + '": ' + relaters.length + ' task' +
-        (relaters.length > 1 ? 's' : '') + ' relate to it. Remove the relation first.', true);
+      var parts = [];
+      if (ownRelate) parts.push('this task relates to ' + this.describeTaskRef(ownRelate));
+      if (relaters.length) {
+        parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
+          ' relate to it (' + this.describeTaskList(relaters) + ')');
+      }
+      this.toast('Cannot delete "' + name + '": ' + parts.join(' and ') +
+        '. Remove the relation first.', true, false, 8000);
       return false;
     },
 
@@ -1562,14 +1587,14 @@
       this.els.confirmDelete.textContent = busy ? 'Deleting...' : 'Delete';
     },
 
-    toast: function (msg, isError, isOk) {
+    toast: function (msg, isError, isOk, duration) {
       var self = this;
       this.els.toast.textContent = msg;
       this.els.toast.className = 'toast show' + (isError ? ' error' : '') + (isOk ? ' ok' : '');
       clearTimeout(this._toastTimer);
       this._toastTimer = setTimeout(function () {
         self.els.toast.classList.remove('show');
-      }, 3000);
+      }, duration || 3000);
     }
   };
 
