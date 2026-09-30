@@ -108,6 +108,26 @@ var ProjectS = (function () {
             }
             break;
           case 'delete':
+            var delTask = null;
+            for (var di = 0; di < state.tasks.length; di++) {
+              if (Number(state.tasks[di].row) === Number(params.row)) { delTask = state.tasks[di]; break; }
+            }
+            var delTaskKey = delTask ? String(delTask['Task-ID'] || '').trim().toLowerCase() : '';
+            var relaterCount = 0;
+            if (delTaskKey) {
+              for (var dri = 0; dri < state.tasks.length; dri++) {
+                if (Number(state.tasks[dri].row) === Number(params.row)) continue;
+                if (String(state.tasks[dri]['Task Relate'] || '').trim().toLowerCase() === delTaskKey) relaterCount++;
+              }
+            }
+            if (relaterCount > 0) {
+              result = {
+                ok: false,
+                error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '": ' + relaterCount +
+                  ' task' + (relaterCount > 1 ? 's' : '') + ' relate to it. Remove the relation first.'
+              };
+              break;
+            }
             state.tasks = state.tasks.filter(function (t) { return t.row !== Number(params.row); });
             break;
           case 'addOrg':

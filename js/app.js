@@ -446,6 +446,14 @@
       });
     },
 
+    tasksRelatingTo: function (taskId) {
+      var target = String(taskId || '').trim().toLowerCase();
+      if (!target) return [];
+      return this.state.tasks.filter(function (t) {
+        return String(t['Task Relate'] || '').trim().toLowerCase() === target;
+      });
+    },
+
     orgNameExists: function (name, exceptRow) {
       var target = String(name || '').trim().toLowerCase();
       if (!target) return false;
@@ -1178,6 +1186,7 @@
       var self = this;
       if (!this.guardWrite()) return;
       var task = this.state.tasks.find(function (t) { return t.row === row; });
+      if (!this.blockRelatedTaskDelete(task)) return;
       this.state.editingRow = row;
       this.state.deleteKind = 'task';
       this.els.confirmTitle.textContent = 'Delete Task';
@@ -1185,6 +1194,19 @@
         ? 'Delete "' + task['Task name'] + '"? This cannot be undone.'
         : 'Are you sure you want to delete this task? This cannot be undone.';
       this.openModal('confirmModal');
+    },
+
+    blockRelatedTaskDelete: function (task) {
+      if (!task) return true;
+      var row = Number(task.row);
+      var relaters = this.tasksRelatingTo(task['Task-ID']).filter(function (t) {
+        return Number(t.row) !== row;
+      });
+      if (!relaters.length) return true;
+      var name = task['Task name'] || task['Task-ID'] || 'this task';
+      this.toast('Cannot delete "' + name + '": ' + relaters.length + ' task' +
+        (relaters.length > 1 ? 's' : '') + ' relate to it. Remove the relation first.', true);
+      return false;
     },
 
     confirmDeleteAction: function () {
@@ -1239,6 +1261,11 @@
     doDelete: function () {
       var self = this;
       var row = this.state.editingRow;
+      var task = this.state.tasks.find(function (t) { return t.row === row; });
+      if (!this.blockRelatedTaskDelete(task)) {
+        this.closeModal('confirmModal');
+        return;
+      }
       this.setBusy(true);
       ProjectS.call('delete', { action: 'delete', row: row }, 'POST').then(function (res) {
         self.setBusy(false);

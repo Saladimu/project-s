@@ -399,6 +399,23 @@ function countTasksForOrg_(orgName) {
   return count;
 }
 
+/** Counts tasks whose "Task Relate" column points at the given Task-ID
+ *  (case-insensitive, trimmed), ignoring the row being deleted. Used to block
+ *  deleting a task that other tasks still relate to. */
+function countTasksRelatingTo_(taskId, exceptRow) {
+  var target = String(taskId || '').trim().toLowerCase();
+  if (!target) return 0;
+  var taskSheet = getTaskSheet_();
+  var headers = getHeaders_(taskSheet);
+  var tasks = readTasks_(taskSheet, headers);
+  var count = 0;
+  for (var i = 0; i < tasks.length; i++) {
+    if (exceptRow && Number(tasks[i].row) === Number(exceptRow)) continue;
+    if (String(tasks[i]['Task Relate'] || '').trim().toLowerCase() === target) count++;
+  }
+  return count;
+}
+
 function deleteOrg_(params) {
   var sheet = getOrgSheet_();
   var rowNum = Number(params.row);
@@ -511,6 +528,16 @@ function deleteTask_(params) {
   var sheet = getTaskSheet_();
   var rowNum = Number(params.row);
   if (!rowNum || rowNum <= CONFIG.HEADER_ROW) throw new Error('Invalid row number');
+  var headers = getHeaders_(sheet);
+  var idIdx = headers.indexOf('Task-ID');
+  var nameIdx = headers.indexOf('Task name');
+  var taskId = idIdx !== -1 ? String(sheet.getRange(rowNum, idIdx + 1).getValue() || '').trim() : '';
+  var taskName = nameIdx !== -1 ? String(sheet.getRange(rowNum, nameIdx + 1).getValue() || '').trim() : '';
+  var relaters = countTasksRelatingTo_(taskId, rowNum);
+  if (relaters > 0) {
+    throw new Error('Cannot delete "' + (taskName || taskId) + '": ' + relaters + ' task' +
+      (relaters > 1 ? 's' : '') + ' relate to it. Remove the relation first.');
+  }
   sheet.deleteRow(rowNum);
   return { ok: true };
 }
