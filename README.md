@@ -88,9 +88,11 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   cached shell instead of stalling (the request still completes and refreshes the cache in the
   background). Versioned CSS/JS and images are **cache-first**, so repeat visits load instantly with
   no network round-trip for assets. The worker script itself is registered with
-  `updateViaCache: 'none'` so the browser never serves `sw.js` from its HTTP cache, and a
-  "new version is ready" prompt appears when an updated worker takes control. This means a deploy
-  shows up after a single reload instead of being masked by stale caches.
+  `updateViaCache: 'none'` so the browser never serves `sw.js` from its HTTP cache. When an updated
+  worker is detected (on load, on `updatefound`, and again whenever the tab regains focus), a
+  persistent **"A new version is available"** banner appears at the top of the app with a
+  **Hard Refresh** button that clears the caches, checks for the latest worker, and reloads. This
+  means a deploy shows up after a single reload instead of being masked by stale caches.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.
@@ -195,6 +197,19 @@ python3 -m http.server 8000
 Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
+
+### 2026-09-30 - Visible update banner with Hard Refresh
+
+- Replaced the one-off "Update available" modal with a persistent **"A new version is
+  available"** banner pinned below the header, shown whenever a new service worker is detected.
+  It carries a **Hard Refresh** button that clears the Cache Storage, triggers a worker update
+  check, then reloads - guaranteed to pull the latest build.
+- Update detection is now more robust: it reacts to `controllerchange`, `updatefound` /
+  `statechange` (installed/activated), and re-checks `registration.update()` whenever the tab
+  regains focus or becomes visible, so long-open tabs still surface the prompt. First visits are
+  excluded (no controller yet) so new users never see a false "update" prompt.
+- Bumped `css/styles.css` to `?v=44`, `js/app.js` to `?v=48`, and `CACHE_NAME` to
+  `project-s-v6`.
 
 ### 2026-09-13 - Network performance pass
 

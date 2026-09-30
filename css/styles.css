@@ -951,6 +951,43 @@ main {
 }
 .banner.hidden { display: none; }
 
+/* ---------- Update banner ---------- */
+.update-banner {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 29;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--grad-brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: var(--shadow-lg);
+}
+.update-banner.hidden { display: none; }
+
+.update-banner-btn {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 16px;
+  background: #fff;
+  color: #4c1d95;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.update-banner-btn:active { transform: scale(0.96); }
+
 /* ---------- Settings ---------- */
 .field-label {
   display: block;

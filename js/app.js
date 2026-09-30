@@ -146,6 +146,8 @@
         fOrgDesc: document.getElementById('fOrgDesc'),
         orgFormSubmit: document.getElementById('orgFormSubmit'),
         confirmTitle: document.getElementById('confirmTitle'),
+        updateBanner: document.getElementById('updateBanner'),
+        updateBannerBtn: document.getElementById('updateBannerBtn'),
         toast: document.getElementById('toast')
       };
 
@@ -245,6 +247,10 @@
 
       this.els.refreshBtn.addEventListener('click', function () {
         self.manualRefresh();
+      });
+
+      this.els.updateBannerBtn.addEventListener('click', function () {
+        self.hardRefresh();
       });
 
       this.els.unlockBtn.addEventListener('click', function () { self.unlockSettings(); });
@@ -1206,13 +1212,28 @@
     showUpdatePrompt: function () {
       if (this.state.updatePrompted) return;
       this.state.updatePrompted = true;
-      this.askConfirm(
-        'Update available',
-        'A new version of Project S is ready. Reload now to get the latest?',
-        function () { window.location.reload(); },
-        'Reload',
-        'primary'
-      );
+      if (this.els.updateBanner) this.els.updateBanner.classList.remove('hidden');
+    },
+
+    hardRefresh: function () {
+      var reload = function () { window.location.reload(); };
+      var jobs = [];
+      try {
+        if (window.caches && caches.keys) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+          }));
+        }
+      } catch (e) {}
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+          jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
+            return reg ? reg.update() : null;
+          }));
+        }
+      } catch (e) {}
+      if (!jobs.length) return reload();
+      Promise.all(jobs).then(reload, reload);
     },
 
     doDelete: function () {

@@ -58,8 +58,11 @@ version in `index.html`:
 - `js/app.js?v=N`
 
 When caching behavior or precached files change, also bump `CACHE_NAME` in
-`sw.js` (e.g. `project-s-v5` -> `project-s-v6`). Skipping these bumps leaves
-users on stale files.
+`sw.js` (e.g. `project-s-v6` -> `project-s-v7`). Bump it on every deploy that
+changes the app: the client detects the new `sw.js`, activates it, and shows
+the in-app **"A new version is available"** banner with the **Hard Refresh**
+button. Skipping the bumps leaves users on stale files and suppresses the
+update prompt.
 
 ### Caching
 - `js/cache.js` (`TaskCache`): memory first, async `localStorage` write,
