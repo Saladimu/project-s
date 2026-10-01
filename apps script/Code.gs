@@ -565,14 +565,16 @@ function deleteTask_(params) {
     : '';
   var relaters = listTasksRelatingTo_(taskId, rowNum);
   if (ownRelate || relaters.length > 0) {
-    var parts = [];
-    if (ownRelate) parts.push('this task relates to ' + describeTaskRef_(ownRelate));
-    if (relaters.length > 0) {
-      parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
-        ' relate to it (' + describeRelatedTasks_(relaters) + ')');
-    }
-    throw new Error('Cannot delete "' + (taskName || taskId) + '": ' + parts.join(' and ') +
-      '. Remove the relation first.');
+    var lines = [];
+    if (ownRelate) lines.push(describeTaskRef_(ownRelate));
+    relaters.forEach(function (t) {
+      var id = String(t['Task-ID'] || '').trim();
+      var nm = String(t['Task name'] || '').trim();
+      lines.push(nm ? (id ? id + ' - ' + nm : nm) : id);
+    });
+    throw new Error('Cannot delete "' + (taskName || taskId) + '".\n' +
+      'This ID ' + taskId + ' relate to:\n' +
+      lines.join('\n') + '\nRemove the relation first.');
   }
   sheet.deleteRow(rowNum);
   return { ok: true };

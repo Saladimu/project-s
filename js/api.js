@@ -140,16 +140,18 @@ var ProjectS = (function () {
               }).filter(Boolean).join('; ');
             };
             if (ownRelate || relaters.length) {
-              var parts = [];
-              if (ownRelate) parts.push('this task relates to ' + refLabel(ownRelate));
-              if (relaters.length) {
-                parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
-                  ' relate to it (' + listLabel(relaters) + ')');
-              }
+              var lines = [];
+              if (ownRelate) lines.push(refLabel(ownRelate));
+              relaters.forEach(function (t) {
+                var id = String(t['Task-ID'] || '').trim();
+                var nm = String(t['Task name'] || '').trim();
+                lines.push(nm ? (id ? id + ' - ' + nm : nm) : id);
+              });
               result = {
                 ok: false,
-                error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '": ' +
-                  parts.join(' and ') + '. Remove the relation first.'
+                error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '".\n' +
+                  'This ID ' + delTask['Task-ID'] + ' relate to:\n' +
+                  lines.join('\n') + '\nRemove the relation first.'
               };
               break;
             }

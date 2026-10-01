@@ -1223,14 +1223,16 @@
       });
       if (!ownRelate && !relaters.length) return true;
       var name = task['Task name'] || task['Task-ID'] || 'this task';
-      var parts = [];
-      if (ownRelate) parts.push('this task relates to ' + this.describeTaskRef(ownRelate));
-      if (relaters.length) {
-        parts.push(relaters.length + ' task' + (relaters.length > 1 ? 's' : '') +
-          ' relate to it (' + this.describeTaskList(relaters) + ')');
-      }
-      this.toast('Cannot delete "' + name + '": ' + parts.join(' and ') +
-        '. Remove the relation first. (Press any key or tap to dismiss.)', true, false, { sticky: true });
+      var lines = [];
+      if (ownRelate) lines.push(this.describeTaskRef(ownRelate));
+      relaters.forEach(function (t) {
+        var id = String(t['Task-ID'] || '').trim();
+        var nm = String(t['Task name'] || '').trim();
+        lines.push(nm ? (id ? id + ' - ' + nm : nm) : id);
+      });
+      var msg = 'Cannot delete "' + name + '".\nThis ID ' + task['Task-ID'] + ' relate to:\n' +
+        lines.join('\n') + '\nRemove the relation first.';
+      this.toast(msg, true, false, { sticky: true, html: true });
       return false;
     },
 
@@ -1295,7 +1297,7 @@
       ProjectS.call('delete', { action: 'delete', row: row }, 'POST').then(function (res) {
         self.setBusy(false);
         if (!res.ok) {
-          self.toast(res.error || 'Delete failed', true);
+          self.toast(res.error || 'Delete failed', true, false, { sticky: true, html: true });
           return;
         }
         self.closeModal('confirmModal');
@@ -1591,7 +1593,11 @@
       var self = this;
       if (typeof opts === 'number') opts = { duration: opts };
       opts = opts || {};
-      this.els.toast.textContent = msg;
+      if (opts.html) {
+        this.els.toast.innerHTML = escapeHtml(msg).replace(/\n/g, '<br>');
+      } else {
+        this.els.toast.textContent = msg;
+      }
       this.els.toast.className = 'toast show' + (isError ? ' error' : '') + (isOk ? ' ok' : '');
       clearTimeout(this._toastTimer);
       this._toastTimer = null;
