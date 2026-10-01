@@ -1230,7 +1230,7 @@
           ' relate to it (' + this.describeTaskList(relaters) + ')');
       }
       this.toast('Cannot delete "' + name + '": ' + parts.join(' and ') +
-        '. Remove the relation first.', true, false, 8000);
+        '. Remove the relation first. (Press any key or tap to dismiss.)', true, false, { sticky: true });
       return false;
     },
 
@@ -1587,14 +1587,39 @@
       this.els.confirmDelete.textContent = busy ? 'Deleting...' : 'Delete';
     },
 
-    toast: function (msg, isError, isOk, duration) {
+    toast: function (msg, isError, isOk, opts) {
       var self = this;
+      if (typeof opts === 'number') opts = { duration: opts };
+      opts = opts || {};
       this.els.toast.textContent = msg;
       this.els.toast.className = 'toast show' + (isError ? ' error' : '') + (isOk ? ' ok' : '');
       clearTimeout(this._toastTimer);
-      this._toastTimer = setTimeout(function () {
-        self.els.toast.classList.remove('show');
-      }, duration || 3000);
+      this._toastTimer = null;
+      if (this._toastDismiss) {
+        document.removeEventListener('keydown', this._toastDismiss);
+        document.removeEventListener('pointerdown', this._toastDismiss);
+        this._toastDismiss = null;
+      }
+      if (opts.sticky) {
+        this._toastDismiss = function () {
+          self.els.toast.classList.remove('show');
+          document.removeEventListener('keydown', self._toastDismiss);
+          document.removeEventListener('pointerdown', self._toastDismiss);
+          self._toastDismiss = null;
+        };
+        /* Attach after the current event finishes so the triggering tap/key
+         * does not immediately dismiss the warning. */
+        setTimeout(function () {
+          if (self._toastDismiss) {
+            document.addEventListener('keydown', self._toastDismiss);
+            document.addEventListener('pointerdown', self._toastDismiss);
+          }
+        }, 0);
+      } else {
+        this._toastTimer = setTimeout(function () {
+          self.els.toast.classList.remove('show');
+        }, opts.duration || 3000);
+      }
     }
   };
 
