@@ -201,6 +201,18 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-10-01 - Multi-line delete-block message
+
+- The **cannot-delete warning** for tasks involved in `Task Relate` relations is now formatted
+  as a multi-line list - each related task on its own line, one per line:
+  `Cannot delete "name".` / `This ID Task-XXX relate to:` / `Task-XXX - name` (one line per
+  related task, including the task's own `Task Relate` target if set) / `Remove the relation first.`
+- The toast renders the line breaks (escaped via `escapeHtml`, converted to `<br>`); the toast
+  stays **sticky** (tap or press any key to dismiss). The same message format is used by the
+  app pre-check, the demo layer, and `Code.gs` `deleteTask_` (live backend).
+- Bumped `css/styles.css` to `?v=45`, `js/api.js` to `?v=28`, `js/app.js` to `?v=53`, and
+  `CACHE_NAME` to `project-s-v11`.
+
 ### 2026-09-30 - Block deleting a related task
 
 - A task **cannot be deleted while it is involved in any relation**: either its own `Task Relate`
