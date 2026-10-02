@@ -1261,7 +1261,7 @@
       var name = task['Task name'] || task['Task-ID'] || 'this task';
       var msg = 'Cannot delete "' + escapeHtml(name) + '".<br>' +
         'This task is linked to:<br>' + lines.join('<br>') + '<br>' +
-        'Remove the relation first. (Press any key or tap to dismiss.)';
+        'Remove the relation first.';
       this.toast(msg, true, false, { sticky: true, html: true, withLinks: true });
       return false;
     },
