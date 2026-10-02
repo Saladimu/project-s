@@ -1349,6 +1349,22 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.error { background: var(--danger); }
 .toast.ok { background: var(--success); }
+.toast.with-links { pointer-events: auto; }
+.toast-link {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.toast-link:hover { opacity: 0.85; }
+
+.task-card.task-flash { animation: taskFlash 2.2s var(--ease); }
+@keyframes taskFlash {
+  0% { box-shadow: 0 0 0 0 transparent; }
+  15% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 8px var(--primary-soft); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
 
 /* ---------- Organizations ---------- */
 .org-list { display: flex; flex-direction: column; gap: 12px; }

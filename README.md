@@ -201,6 +201,20 @@ Then open `http://localhost:8000/` in a browser.
 
 ## Changelog
 
+### 2026-10-02 - Clickable related-task links in delete warning
+
+- Each `Task-ID - name` entry in the sticky cannot-delete warning is now a **link**. Clicking a
+  link jumps to the Tasks view, searches for that `Task-ID`, scrolls its card into view, and
+  briefly highlights it (`task-flash`), so the blocking record can be inspected or edited.
+- The warning text is now `Cannot delete "name".` / `This task is linked to:` / linked task
+  entries / `Remove the relation first. (Press any key or tap to dismiss.)`. Values are
+  `escapeHtml`-escaped before being embedded as HTML.
+- Tapping a link no longer dismisses the toast (the dismiss handler ignores `pointerdown` on
+  `.toast-link`); the toast is dismissed by the click handler after navigation. Task cards now
+  carry `data-task-id` / `data-row` attributes for anchor lookups.
+- Bumped `css/styles.css` to `?v=46`, `js/app.js` to `?v=54`, and `CACHE_NAME` to
+  `project-s-v12`.
+
 ### 2026-10-01 - Multi-line delete-block message
 
 - The **cannot-delete warning** for tasks involved in `Task Relate` relations is now formatted

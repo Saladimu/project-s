@@ -284,6 +284,13 @@
         else if (btn.classList.contains('del')) self.openDelete(row);
       });
 
+      this.els.toast.addEventListener('click', function (e) {
+        var link = e.target.closest ? e.target.closest('.toast-link') : null;
+        if (!link) return;
+        e.preventDefault();
+        self.gotoTask(link.getAttribute('data-task-id'));
+      });
+
       this.els.filterChips.addEventListener('click', function (e) {
         var chip = e.target.closest ? e.target.closest('.chip') : null;
         if (!chip || !self.els.filterChips.contains(chip)) return;
@@ -365,6 +372,28 @@
       if (name === 'dashboard') this.renderDashboard();
       if (name === 'tasks') this.renderTasks();
       if (name === 'organizations') this.renderOrganizations();
+    },
+
+    /* Jump to a task record from a warning link: open the Tasks view, search
+     * for its Task-ID, then scroll to and briefly highlight its card. */
+    gotoTask: function (taskId) {
+      var id = String(taskId || '').trim();
+      if (!id) return;
+      var self = this;
+      this.state.filter = 'All';
+      this.state.internalFilter = 'all';
+      this.state.search = id.toLowerCase();
+      if (this.els.searchInput) this.els.searchInput.value = id;
+      this.switchView('tasks');
+      this.hideToast();
+      var escaped = (window.CSS && CSS.escape) ? CSS.escape(id) : id.replace(/["\\]/g, '\\$&');
+      setTimeout(function () {
+        var card = self.els.taskList.querySelector('[data-task-id="' + escaped + '"]');
+        if (!card) return;
+        if (card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('task-flash');
+        setTimeout(function () { card.classList.remove('task-flash'); }, 2200);
+      }, 60);
     },
 
     applyStatusFilter: function (status) {
@@ -462,14 +491,6 @@
       });
       var nm = match ? String(match['Task name'] || '').trim() : '';
       return nm ? target + ' - ' + nm : target;
-    },
-
-    describeTaskList: function (list) {
-      return (list || []).map(function (t) {
-        var id = String(t['Task-ID'] || '').trim();
-        var nm = String(t['Task name'] || '').trim();
-        return nm ? (id ? id + ' - ' + nm : nm) : id;
-      }).filter(Boolean).join('; ');
     },
 
     orgNameExists: function (name, exceptRow) {
@@ -813,7 +834,7 @@
       var duration = t.Duration ? durationTag(t.Duration) : '';
       var relClassAttr = relClass ? ' ' + relClass : '';
 
-      return '<div class="task-card' + relClassAttr + '" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
+      return '<div class="task-card' + relClassAttr + '" data-task-id="' + escapeHtml(t['Task-ID'] || '') + '" data-row="' + t.row + '" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
         '<div class="task-main">' +
           '<div class="task-left">' +
             '<div class="task-date">' + (t['Task-ID'] ? escapeHtml(t['Task-ID']) + '  /  ' : '') + this.fmtDate(t.Date) + (t['Due Date'] ? '  /  Due ' + this.fmtDate(t['Due Date']) : '') + '</div>' +
@@ -1216,23 +1237,32 @@
 
     blockRelatedTaskDelete: function (task) {
       if (!task) return true;
+      var self = this;
       var row = Number(task.row);
       var ownRelate = String(task['Task Relate'] || '').trim();
       var relaters = this.tasksRelatingTo(task['Task-ID']).filter(function (t) {
         return Number(t.row) !== row;
       });
       if (!ownRelate && !relaters.length) return true;
-      var name = task['Task name'] || task['Task-ID'] || 'this task';
+
+      function link(id, label) {
+        return '<a href="#" class="toast-link" data-task-id="' + escapeHtml(id) + '">' +
+          escapeHtml(label) + '</a>';
+      }
+
       var lines = [];
-      if (ownRelate) lines.push(this.describeTaskRef(ownRelate));
+      if (ownRelate) lines.push(link(ownRelate, self.describeTaskRef(ownRelate)));
       relaters.forEach(function (t) {
         var id = String(t['Task-ID'] || '').trim();
         var nm = String(t['Task name'] || '').trim();
-        lines.push(nm ? (id ? id + ' - ' + nm : nm) : id);
+        lines.push(link(id || nm, nm ? (id ? id + ' - ' + nm : nm) : id));
       });
-      var msg = 'Cannot delete "' + name + '".\nThis ID ' + task['Task-ID'] + ' relate to:\n' +
-        lines.join('\n') + '\nRemove the relation first.';
-      this.toast(msg, true, false, { sticky: true, html: true });
+
+      var name = task['Task name'] || task['Task-ID'] || 'this task';
+      var msg = 'Cannot delete "' + escapeHtml(name) + '".<br>' +
+        'This task is linked to:<br>' + lines.join('<br>') + '<br>' +
+        'Remove the relation first. (Press any key or tap to dismiss.)';
+      this.toast(msg, true, false, { sticky: true, html: true, withLinks: true });
       return false;
     },
 
@@ -1297,7 +1327,7 @@
       ProjectS.call('delete', { action: 'delete', row: row }, 'POST').then(function (res) {
         self.setBusy(false);
         if (!res.ok) {
-          self.toast(res.error || 'Delete failed', true, false, { sticky: true, html: true });
+          self.toast(res.error || 'Delete failed', true, false, { sticky: true });
           return;
         }
         self.closeModal('confirmModal');
@@ -1589,16 +1619,8 @@
       this.els.confirmDelete.textContent = busy ? 'Deleting...' : 'Delete';
     },
 
-    toast: function (msg, isError, isOk, opts) {
-      var self = this;
-      if (typeof opts === 'number') opts = { duration: opts };
-      opts = opts || {};
-      if (opts.html) {
-        this.els.toast.innerHTML = escapeHtml(msg).replace(/\n/g, '<br>');
-      } else {
-        this.els.toast.textContent = msg;
-      }
-      this.els.toast.className = 'toast show' + (isError ? ' error' : '') + (isOk ? ' ok' : '');
+    hideToast: function () {
+      this.els.toast.classList.remove('show', 'with-links');
       clearTimeout(this._toastTimer);
       this._toastTimer = null;
       if (this._toastDismiss) {
@@ -1606,12 +1628,22 @@
         document.removeEventListener('pointerdown', this._toastDismiss);
         this._toastDismiss = null;
       }
+    },
+
+    toast: function (msg, isError, isOk, opts) {
+      var self = this;
+      if (typeof opts === 'number') opts = { duration: opts };
+      opts = opts || {};
+      this.hideToast();
+      if (opts.html) this.els.toast.innerHTML = msg;
+      else this.els.toast.textContent = msg;
+      this.els.toast.className = 'toast show' + (isError ? ' error' : '') + (isOk ? ' ok' : '') +
+        (opts.withLinks ? ' with-links' : '');
       if (opts.sticky) {
-        this._toastDismiss = function () {
-          self.els.toast.classList.remove('show');
-          document.removeEventListener('keydown', self._toastDismiss);
-          document.removeEventListener('pointerdown', self._toastDismiss);
-          self._toastDismiss = null;
+        this._toastDismiss = function (e) {
+          if (e && e.type === 'pointerdown' && e.target && e.target.closest &&
+              e.target.closest('.toast-link')) return;
+          self.hideToast();
         };
         /* Attach after the current event finishes so the triggering tap/key
          * does not immediately dismiss the warning. */
@@ -1623,7 +1655,7 @@
         }, 0);
       } else {
         this._toastTimer = setTimeout(function () {
-          self.els.toast.classList.remove('show');
+          self.hideToast();
         }, opts.duration || 3000);
       }
     }
