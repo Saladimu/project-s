@@ -203,20 +203,21 @@ Then open `http://localhost:8000/` in a browser.
 
 ### 2026-10-02 - Clickable related-task links in delete warning
 
-- Each `Task-ID - name` entry in the sticky cannot-delete warning is now a **link**. Clicking a
-  link jumps to the Tasks view, searches for that `Task-ID`, scrolls its card into view, and
-  briefly highlights it (`task-flash`), so the blocking record can be inspected or edited.
-- The warning text is now `Cannot delete "name".` / `This task is linked to:` / linked task
-  entries / `Remove the relation first.`. Values are
-  `escapeHtml`-escaped before being embedded as HTML.
+- Each `Task-ID - name` entry in the sticky cannot-delete warning is now a **bulleted link**.
+  Clicking a link jumps to the Tasks view, searches for that `Task-ID`, scrolls its card into
+  view, and briefly highlights it (`task-flash`), so the blocking record can be inspected or
+  edited.
+- The warning text is now `Cannot delete "name".` / `This task is linked to:` / bulleted linked
+  task entries / `Remove the relation(s) first.`. Values are `escapeHtml`-escaped before being
+  embedded as HTML.
 - Tapping a link no longer dismisses the toast (the dismiss handler ignores `pointerdown` on
   `.toast-link`); the toast is dismissed by the click handler after navigation. Task cards now
   carry `data-task-id` / `data-row` attributes for anchor lookups.
 - The About card now shows a **`Version : N`** line, resolved from the active service worker
   `CACHE_NAME` (`project-s-vN` -> `N`) via `CacheStorage.keys()`, with a `sw.js` parse fallback
   when no worker is active.
-- Bumped `css/styles.css` to `?v=47`, `js/app.js` to `?v=56`, and `CACHE_NAME` to
-  `project-s-v14`.
+- Bumped `css/styles.css` to `?v=47`, `js/api.js` to `?v=29`, `js/app.js` to `?v=57`, and
+  `CACHE_NAME` to `project-s-v15`.
 
 ### 2026-10-01 - Multi-line delete-block message
 

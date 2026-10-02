@@ -141,17 +141,17 @@ var ProjectS = (function () {
             };
             if (ownRelate || relaters.length) {
               var lines = [];
-              if (ownRelate) lines.push(refLabel(ownRelate));
+              if (ownRelate) lines.push('\u2022 ' + refLabel(ownRelate));
               relaters.forEach(function (t) {
                 var id = String(t['Task-ID'] || '').trim();
                 var nm = String(t['Task name'] || '').trim();
-                lines.push(nm ? (id ? id + ' - ' + nm : nm) : id);
+                lines.push('\u2022 ' + (nm ? (id ? id + ' - ' + nm : nm) : id));
               });
               result = {
                 ok: false,
                 error: 'Cannot delete "' + (delTask['Task name'] || delTask['Task-ID']) + '".\n' +
                   'This ID ' + delTask['Task-ID'] + ' relate to:\n' +
-                  lines.join('\n') + '\nRemove the relation first.'
+                  lines.join('\n') + '\nRemove the relation(s) first.'
               };
               break;
             }

@@ -1281,7 +1281,7 @@
       if (!ownRelate && !relaters.length) return true;
 
       function link(id, label) {
-        return '<a href="#" class="toast-link" data-task-id="' + escapeHtml(id) + '">' +
+        return '&#8226; <a href="#" class="toast-link" data-task-id="' + escapeHtml(id) + '">' +
           escapeHtml(label) + '</a>';
       }
 
@@ -1296,7 +1296,7 @@
       var name = task['Task name'] || task['Task-ID'] || 'this task';
       var msg = 'Cannot delete "' + escapeHtml(name) + '".<br>' +
         'This task is linked to:<br>' + lines.join('<br>') + '<br>' +
-        'Remove the relation first.';
+        'Remove the relation(s) first.';
       this.toast(msg, true, false, { sticky: true, html: true, withLinks: true });
       return false;
     },
