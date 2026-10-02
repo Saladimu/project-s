@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://docs.google.com" crossorigin>
   <link rel="dns-prefetch" href="https://docs.google.com">
   <link rel="dns-prefetch" href="https://script.google.com">
-  <link rel="stylesheet" href="css/styles.css?v=46">
+  <link rel="stylesheet" href="css/styles.css?v=47">
   <script>
     (function () {
       var saved;
@@ -302,7 +302,10 @@
         <h3 class="block-title">About</h3>
         <div class="about-block">
           <img class="about-logo" src="nbpicon.png" alt="NBP icon" width="56" height="56" loading="lazy" decoding="async">
-          <p class="muted" id="aboutText"></p>
+          <div class="about-info">
+            <p class="muted" id="aboutText"></p>
+            <p class="muted about-version" id="aboutVersion">Version : -</p>
+          </div>
         </div>
       </div>
 
@@ -493,7 +496,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=28"></script>
-  <script src="js/app.js?v=55"></script>
+  <script src="js/app.js?v=56"></script>
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;

@@ -117,6 +117,7 @@
         pwdToggle: document.getElementById('pwdToggle'),
         pwdBody: document.getElementById('pwdBody'),
         aboutText: document.getElementById('aboutText'),
+        aboutVersion: document.getElementById('aboutVersion'),
         fab: document.getElementById('fab'),
         taskModal: document.getElementById('taskModal'),
         confirmModal: document.getElementById('confirmModal'),
@@ -160,8 +161,42 @@
       this.initSettingsPanels();
       this.applySecurityState();
       this.renderInternalFilter();
+      this.showVersion();
 
       this.refresh();
+    },
+
+    /* Show the app version derived from the service worker CACHE_NAME
+     * (project-s-vN -> N). Prefers the active CacheStorage name and falls
+     * back to parsing sw.js when no worker is active yet. */
+    showVersion: function () {
+      var el = this.els.aboutVersion;
+      if (!el) return;
+      function render(n) { el.textContent = 'Version : ' + n; }
+      function fromCacheNames() {
+        if (!window.caches || !caches.keys) return Promise.reject();
+        return caches.keys().then(function (names) {
+          var best = null;
+          (names || []).forEach(function (name) {
+            var m = /^project-s-v(\d+)$/.exec(name);
+            if (m) {
+              var n = Number(m[1]);
+              if (best === null || n > best) best = n;
+            }
+          });
+          if (best === null) throw new Error('no cache');
+          render(best);
+        });
+      }
+      function fromScript() {
+        return fetch('sw.js', { cache: 'no-store' }).then(function (r) {
+          return r.text();
+        }).then(function (text) {
+          var m = /CACHE_NAME\s*=\s*['"]project-s-v(\d+)['"]/.exec(text);
+          if (m) render(m[1]);
+        });
+      }
+      fromCacheNames().catch(fromScript).catch(function () {});
     },
 
     /* ---------------- theme ---------------- */

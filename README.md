@@ -212,8 +212,11 @@ Then open `http://localhost:8000/` in a browser.
 - Tapping a link no longer dismisses the toast (the dismiss handler ignores `pointerdown` on
   `.toast-link`); the toast is dismissed by the click handler after navigation. Task cards now
   carry `data-task-id` / `data-row` attributes for anchor lookups.
-- Bumped `css/styles.css` to `?v=46`, `js/app.js` to `?v=55`, and `CACHE_NAME` to
-  `project-s-v13`.
+- The About card now shows a **`Version : N`** line, resolved from the active service worker
+  `CACHE_NAME` (`project-s-vN` -> `N`) via `CacheStorage.keys()`, with a `sw.js` parse fallback
+  when no worker is active.
+- Bumped `css/styles.css` to `?v=47`, `js/app.js` to `?v=56`, and `CACHE_NAME` to
+  `project-s-v14`.
 
 ### 2026-10-01 - Multi-line delete-block message
 

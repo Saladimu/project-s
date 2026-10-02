@@ -1082,6 +1082,8 @@ textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
   box-shadow: var(--shadow-sm);
 }
 .about-block .muted { flex: 1; min-width: 0; }
+.about-info { flex: 1; min-width: 0; }
+.about-version { margin-top: 6px; font-size: 12px; opacity: 0.85; }
 
 .about-card {
   background: linear-gradient(150deg, #f0faf5, #e6f4ee);
