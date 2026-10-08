@@ -199,6 +199,185 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/` in a browser.
 
+## How it works
+
+End-to-end flow of the static app, cache, Google Sheet, and Apps Script backend.
+
+### Architecture
+
+```mermaid
+flowchart LR
+    Browser["Browser: index.html"]
+    App["js/app.js UI"]
+    Api["js/api.js client"]
+    Cache["js/cache.js TaskCache"]
+    SW["sw.js service worker"]
+    Gviz["docs.google.com gviz"]
+    GAS["script.google.com Apps Script"]
+    Sheet["Google Sheet TaskList + Organization"]
+
+    Browser --> App
+    Browser --> SW
+    App --> Api
+    Api --> Cache
+    Api -->|"mode api"| GAS
+    Api -->|"mode read"| Gviz
+    Api -->|"mode demo"| Api
+    GAS --> Sheet
+    Gviz --> Sheet
+```
+
+### Connection mode
+
+Mode is resolved from the Apps Script URL and spreadsheet URL in Settings. A bundled default sheet URL is used until the user clears it.
+
+```mermaid
+flowchart TD
+    Start["loadConfig"] --> ApiUrl{"Apps Script URL set?"}
+    ApiUrl -->|"yes"| ModeApi["mode = api read/write"]
+    ApiUrl -->|"no"| SheetUrl{"Spreadsheet URL set?"}
+    SheetUrl -->|"yes"| ModeRead["mode = read live gviz"]
+    SheetUrl -->|"no"| ModeDemo["mode = demo in-memory sample"]
+```
+
+### App startup and data load
+
+`App.init` locks Settings, binds UI, then `refresh()`. Fresh cache (5-minute TTL) paints immediately and skips the network. Stale cache paints first, then revalidates.
+
+```mermaid
+flowchart TD
+    Init["App.init"] --> LoadCfg["ProjectS.loadConfig"]
+    LoadCfg --> Lock["Lock Settings"]
+    Lock --> Refresh["refresh"]
+    Refresh --> Cached{"Cached payload ok?"}
+    Cached -->|"yes"| Paint["applyData"]
+    Paint --> Fresh{"Cache fresh 5 min TTL?"}
+    Fresh -->|"yes"| Done["Skip network"]
+    Fresh -->|"no"| InitCall["ProjectS.call init"]
+    Cached -->|"no"| InitCall
+    InitCall --> Mode{"Connection mode"}
+    Mode -->|"demo"| Demo["In-memory demo data"]
+    Mode -->|"api"| Gas["GET Apps Script action=init"]
+    Mode -->|"read"| Gviz["gviz TaskList + Organization"]
+    Demo --> Save["TaskCache.save"]
+    Gas --> Save
+    Gviz --> Save
+    Save --> Paint2["applyData"]
+    Paint2 --> Views["Render Dashboard Tasks Organizations"]
+```
+
+### Read vs write
+
+Read actions (`init`, `tasks`, `options`, `orgs`) go through `TaskCache` and coalesce in-flight requests. Write actions clear the cache so the next load hits the network. Writes need `mode = api`.
+
+```mermaid
+flowchart TD
+    Call["ProjectS.call action"] --> Write{"Write action?"}
+    Write -->|"yes"| Clear["clearCached"]
+    Clear --> Dispatch["dispatch"]
+    Write -->|"no"| Read{"Read action?"}
+    Read -->|"yes"| Hit{"Fresh cache?"}
+    Hit -->|"yes"| ReturnCache["Return cached payload"]
+    Hit -->|"no"| Inflight{"In-flight request?"}
+    Inflight -->|"yes"| Reuse["Reuse in-flight promise"]
+    Inflight -->|"no"| Dispatch
+    Read -->|"no"| Dispatch
+    Dispatch --> Mode{"mode"}
+    Mode -->|"demo"| Demo["demo handler"]
+    Mode -->|"api"| ApiCall["apiCall GET or POST"]
+    Mode -->|"read"| ReadCall["readCall gviz or reject writes"]
+```
+
+### Task add / edit / delete
+
+`No` and `Task-ID` are never written by the app. `Duration` is copied as a relative formula on add. A task cannot be deleted while it is involved in any `Task Relate` relation.
+
+```mermaid
+flowchart TD
+    Form["Add or Edit form"] --> Guard{"canWrite api mode?"}
+    Guard -->|"no"| ToastRO["Toast: view-only"]
+    Guard -->|"yes"| Save["POST add or update"]
+    Save --> Backend["Code.gs addTask_ / updateTask_"]
+    Backend --> Formulas["Skip Task-ID and Duration writes"]
+    Formulas --> AddRow{"New row?"}
+    AddRow -->|"yes"| CopyDur["Copy Duration formula PASTE_FORMULA"]
+    AddRow -->|"no"| Done["ok"]
+    CopyDur --> Done
+
+    Del["Delete task"] --> Relate{"Own Task Relate or others point at Task-ID?"}
+    Relate -->|"yes"| Block["Sticky toast with linked Task-ID - name"]
+    Relate -->|"no"| Confirm["Confirm dialog"]
+    Confirm --> DelApi["POST delete"]
+    DelApi --> DelGs["deleteTask_ same relate check"]
+    DelGs --> Invalidate["clearCached then refresh"]
+```
+
+### Organization maintenance
+
+Names must be unique (case-insensitive). An organisation still referenced by a task cannot be deleted or renamed; its description can still be edited.
+
+```mermaid
+flowchart TD
+    OrgSave["Add or Edit organization"] --> NameReq{"Name filled?"}
+    NameReq -->|"no"| ErrName["Name required"]
+    NameReq -->|"yes"| Dup{"Name already exists?"}
+    Dup -->|"yes"| ErrDup["Organization X already exists"]
+    Dup -->|"no"| Rename{"Renaming an in-use org?"}
+    Rename -->|"yes"| ErrRename["Cannot rename: N tasks use it"]
+    Rename -->|"no"| OrgApi["POST addOrg or updateOrg"]
+
+    OrgDel["Delete organization"] --> InUse{"Any task uses this Name?"}
+    InUse -->|"yes"| ErrDel["Cannot delete: N tasks use it"]
+    InUse -->|"no"| Confirm["Confirm dialog"]
+    Confirm --> DelOrg["POST deleteOrg"]
+```
+
+### Settings lock and database tools
+
+Settings start locked. Default password `00000` keeps spreadsheet / Apps Script URLs masked. Unlocked Settings auto-lock after 5 minutes idle. Backup / restore / wipe always target the sheet named `TaskList`.
+
+```mermaid
+flowchart TD
+    Settings["Open Settings"] --> Locked{"Locked?"}
+    Locked -->|"yes"| Unlock["Enter password"]
+    Unlock --> Ok{"Valid hash?"}
+    Ok -->|"no"| Stay["Stay locked"]
+    Ok -->|"yes"| Reveal["Show Connection Database Change Password"]
+    Reveal --> Default{"Password still 00000?"}
+    Default -->|"yes"| Mask["Mask URLs"]
+    Default -->|"no"| ShowUrls["Show real URLs"]
+    Reveal --> Idle{"5 min idle or leave Settings?"}
+    Idle -->|"yes"| Relock["Auto-lock"]
+
+    DB["Database submenu"] --> Backup["Backup: TaskBAK-dd-mm-yy"]
+    DB --> Restore["Restore: list newest first overwrite TaskList"]
+    DB --> Wipe["Wipe: clear data rows restore formulas"]
+    Backup --> TaskList["Exact sheet name TaskList"]
+    Restore --> TaskList
+    Wipe --> TaskList
+```
+
+### Service worker
+
+Navigations and HTML are network-first with a 3s cap. Versioned CSS/JS and images are cache-first. Google origins are never intercepted. A new `CACHE_NAME` surfaces the in-app update banner.
+
+```mermaid
+flowchart TD
+    Fetch["GET fetch"] --> Origin{"Same origin?"}
+    Origin -->|"no"| Pass["Do not intercept"]
+    Origin -->|"yes"| Google{"docs.google.com or script.google.com?"}
+    Google -->|"yes"| Pass
+    Google -->|"no"| Kind{"HTML or navigation?"}
+    Kind -->|"yes"| NF["Network-first 3s cap"]
+    NF --> Fast{"Network within 3s?"}
+    Fast -->|"yes"| ServeNet["Serve network + update cache"]
+    Fast -->|"no"| Shell["Serve cached shell; network refreshes cache"]
+    Kind -->|"no"| CF["Cache-first CSS/JS/images"]
+    CF --> Hit{"In cache?"}
+    Hit -->|"yes"| ServeCache["Serve cache"]
+    Hit -->|"no"| FetchAsset["Fetch once then cache"]
+```
+
 ## Changelog
 
 ### 2026-10-02 - Clickable related-task links in delete warning
