@@ -5,7 +5,7 @@
  *  - images            : cache-first
  * The worker script is registered with updateViaCache:'none' so a deploy is
  * picked up on the next load. */
-var CACHE_NAME = 'project-s-v15';
+var CACHE_NAME = 'project-s-v17';
 var NETWORK_TIMEOUT = 3000;
 
 /* Only unversioned files are precached. Versioned assets (styles.css?v=..,
@@ -15,7 +15,8 @@ var PRECACHE = [
   './',
   './index.html',
   './favicon.png',
-  './pro-s.jpg'
+  './icon.svg',
+  './manifest.webmanifest'
 ];
 
 self.addEventListener('install', function (event) {

@@ -1,6 +1,6 @@
-# Project S - Task Manager
+# Project S - Scholarship Task Manager
 
-A mobile-first web app for entering and managing task data backed by a Google Sheet.
+A mobile-first web app for entering and managing scholarship task data backed by a Google Sheet.
 Runs entirely as a static site (no build step) - open `index.html` in any browser.
 Responsive layout: optimised for **mobile**, **tablet** and **desktop** screens.
 
@@ -15,9 +15,14 @@ project-s/
   js/app.js             UI logic, rendering, formatting
   apps script/Code.gs   Google Apps Script backend (paste into your sheet)
   sw.js                 Service worker - caches static assets for fast loading
-  favicon.png           Browser tab icon
+  icon.svg              Scholarship cap mark - header logo and favicon (vector source)
+  favicon.png           32px favicon fallback
+  icon-192.png          PWA icon (192px)
+  icon-512.png          PWA icon (512px)
+  icon-maskable-512.png PWA maskable icon (Android adaptive icons)
+  apple-touch-icon.png  iOS home-screen icon (180px, full bleed)
+  manifest.webmanifest  PWA install metadata (name, colours, icons)
   nbpicon.png           About-section logo (Settings)
-  pro-s.jpg             Header logo (left side, next to the brand)
 ```
 
 ## Sheet structure the app expects
@@ -75,8 +80,10 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   based on the selected filters. The chip values are **dynamic**, pulled from the Google Sheet
   (merged from the sheet's dropdown options and the unique values actually present in the task
   data), so nothing is hard-coded.
-- **Header** - shows the `pro-s.jpg` logo on the left of the brand; the browser tab shows the
-  `favicon.png` icon. A **refresh button** (spinning icon) on the right manually re-fetches the
+- **Header** - shows the scholarship mark (`icon.svg`) with the **Project S** wordmark and a
+  **Scholarship Tasks** descriptor; the browser tab shows the same mark (`icon.svg`, with
+  `favicon.png` as the PNG fallback). A **refresh button**
+  (spinning icon) on the right manually re-fetches the
   latest data from the sheet.
 - **Local caching** - `js/cache.js` (`TaskCache`) holds the last successful payload in memory
   and persists it to `localStorage` asynchronously (5-minute TTL, keyed by connection mode/URL).
@@ -379,6 +386,22 @@ flowchart TD
 ```
 
 ## Changelog
+
+### 2026-10-20 - Scholarship logo, icon and install metadata
+
+- Added a new scholarship-specific vector mark (`icon.svg`): a white **graduation cap** with a
+  soft lavender base, its **tassel** leading into a green **check medallion** - education plus
+  task completion in one mark. It replaces the raster `pro-s.jpg` in the header and is now the
+  favicon. The old standalone animated check badge next to the wordmark was removed.
+- The header wordmark is now a lockup: the cap mark, **Project S**, and a **Scholarship Tasks**
+  descriptor. The page title, meta description and install metadata use the same wording.
+- Generated the raster set from the vector: `favicon.png` (32px), `icon-192.png`,
+  `icon-512.png`, `apple-touch-icon.png` (180px, full bleed for iOS) and
+  `icon-maskable-512.png` (extra padding for Android's adaptive mask).
+- Added `manifest.webmanifest` (`display: standalone`, brand theme colours, all icon sizes) so
+  the app can be installed to a home screen with the new branding.
+- `sw.js` now precaches `icon.svg` and the manifest instead of the unused `pro-s.jpg`; bumped
+  `css/styles.css` to `?v=49` and `CACHE_NAME` to `project-s-v17`.
 
 ### 2026-10-02 - Clickable related-task links in delete warning
 

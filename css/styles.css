@@ -164,18 +164,20 @@ input, select, textarea { font-family: inherit; }
 .app-header > * { position: relative; z-index: 1; }
 
 .logo {
+  width: 32px;
   height: 32px;
-  width: auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
 .brand-group { display: flex; align-items: center; gap: 11px; }
+
+.brand-lockup { display: flex; flex-direction: column; min-width: 0; }
 
 .brand {
   font-size: 19px;
   font-weight: 800;
   letter-spacing: 0.2px;
+  line-height: 1.1;
   display: flex;
   align-items: baseline;
 }
@@ -192,18 +194,15 @@ input, select, textarea { font-family: inherit; }
   transform: translateY(1px);
 }
 
-.brand-badge {
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  filter: drop-shadow(0 2px 6px rgba(217, 70, 239, 0.5));
-  animation: badgeGlow 3s ease-in-out infinite;
-}
-.brand-badge .icon { width: 24px; height: 24px; }
-
-@keyframes badgeGlow {
-  0%, 100% { filter: drop-shadow(0 2px 6px rgba(217, 70, 239, 0.45)); }
-  50% { filter: drop-shadow(0 2px 10px rgba(244, 63, 94, 0.75)); }
+.brand-sub {
+  margin-top: 2px;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #c7d2fe;
+  white-space: nowrap;
 }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
