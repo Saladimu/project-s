@@ -91,15 +91,17 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
   cache still paints the UI first, then revalidates in the background. Duplicate in-flight reads
   are coalesced; add / edit / delete (and other writes) invalidate the cache so the next load
   hits the network. A **service worker** (`sw.js`) keeps the app fresh: navigations and the HTML
-  shell are fetched **network-first** with a 3s cap, so a slow/flaky connection falls back to the
+  shell are fetched **network-first** with a 2s cap, so a slow/flaky connection falls back to the
   cached shell instead of stalling (the request still completes and refreshes the cache in the
   background). Versioned CSS/JS and images are **cache-first**, so repeat visits load instantly with
   no network round-trip for assets. The worker script itself is registered with
   `updateViaCache: 'none'` so the browser never serves `sw.js` from its HTTP cache. When an updated
-  worker is detected (on load, on `updatefound`, and again whenever the tab regains focus), a
+  worker is detected (on load, on `updatefound`, and again when the tab regains focus, throttled to
+  once a minute), a
   persistent **"A new version is available"** banner appears at the top of the app with a
-  **Hard Refresh** button that clears the caches, checks for the latest worker, and reloads. This
-  means a deploy shows up after a single reload instead of being masked by stale caches.
+  **Hard Refresh** button that unregisters the worker, clears Cache Storage, and reloads through
+  a one-time cache-busted URL. This bypasses a CDN-cached `sw.js` or HTML shell, so a deploy
+  shows up after a single reload instead of being pinned to stale caches.
 - **Tasks** - searchable list sorted by **date descending** (newest first), filter chips by
   status, an **Internal** filter (All / Internal / External), colour-coded status badges,
   overdue due dates highlighted.
@@ -366,7 +368,7 @@ flowchart TD
 
 ### Service worker
 
-Navigations and HTML are network-first with a 3s cap. Versioned CSS/JS and images are cache-first. Google origins are never intercepted. A new `CACHE_NAME` surfaces the in-app update banner.
+Navigations and HTML are network-first with a 2s cap. Versioned CSS/JS and images are cache-first. Google origins are never intercepted. A new `CACHE_NAME` surfaces the in-app update banner.
 
 ```mermaid
 flowchart TD
@@ -375,7 +377,7 @@ flowchart TD
     Origin -->|"yes"| Google{"docs.google.com or script.google.com?"}
     Google -->|"yes"| Pass
     Google -->|"no"| Kind{"HTML or navigation?"}
-    Kind -->|"yes"| NF["Network-first 3s cap"]
+    Kind -->|"yes"| NF["Network-first 2s cap"]
     NF --> Fast{"Network within 3s?"}
     Fast -->|"yes"| ServeNet["Serve network + update cache"]
     Fast -->|"no"| Shell["Serve cached shell; network refreshes cache"]
@@ -386,6 +388,24 @@ flowchart TD
 ```
 
 ## Changelog
+
+### 2026-10-20 - Network performance tuning
+
+- **Apps Script init**: `initPayload_()` now reuses the task headers it already read, and
+  `getDropdown_()` reads all data validations for a column in one `getDataValidations()` call
+  instead of calling `getDataValidation()` once per row (up to 500 rows x 3 columns). This cuts
+  backend sheet calls and init latency in API mode. **Redeploy `apps script/Code.gs`** to apply.
+- **Service worker**: the cached-shell fallback timeout is now **2s** (was 3s), so slow or flaky
+  connections paint the cached app sooner while the network request keeps refreshing in the
+  background.
+- **Update checks**: `registration.update()` is throttled to once per 60s. `focus` and
+  `visibilitychange` often fire together, so the previous code could issue duplicate `sw.js`
+  requests.
+- **Hard Refresh**: now unregisters every service worker registration, clears Cache Storage, and
+  reloads with a one-time `ps_refresh` query. The cache-busted navigation bypasses CDN/browser
+  caches for the HTML shell, then the fresh page re-registers the worker. The temporary query is
+  removed from the address bar after load. `js/app.js` bumped to `?v=58`.
+- Bumped `CACHE_NAME` to `project-s-v18`.
 
 ### 2026-10-20 - Scholarship logo, icon and install metadata
 

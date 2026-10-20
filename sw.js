@@ -5,8 +5,8 @@
  *  - images            : cache-first
  * The worker script is registered with updateViaCache:'none' so a deploy is
  * picked up on the next load. */
-var CACHE_NAME = 'project-s-v17';
-var NETWORK_TIMEOUT = 3000;
+var CACHE_NAME = 'project-s-v18';
+var NETWORK_TIMEOUT = 2000;
 
 /* Only unversioned files are precached. Versioned assets (styles.css?v=..,
  * app.js?v=..) are cached on first use by the cache-first handler, keyed by
@@ -127,6 +127,9 @@ self.addEventListener('fetch', function (event) {
   var parsed;
   try { parsed = new URL(url); } catch (e) { return; }
   if (parsed.origin !== self.location.origin) return;
+  /* Hard Refresh reloads through a cache-busted URL; let that navigation hit
+   * the network directly instead of caching a one-off entry. */
+  if (parsed.searchParams.has('ps_refresh')) return;
 
   event.respondWith(isHtmlOrNavigation(request) ? networkFirst(request, event) : cacheFirst(request));
 });

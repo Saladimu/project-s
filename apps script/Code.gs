@@ -127,9 +127,9 @@ function initPayload_() {
     columns: headers,
     tasks: readTasks_(sheet, headers),
     options: {
-      purpose: getDropdown_(sheet, 'Purpose'),
-      pic: getDropdown_(sheet, 'PIC'),
-      status: getDropdown_(sheet, 'Status')
+      purpose: getDropdown_(sheet, 'Purpose', headers),
+      pic: getDropdown_(sheet, 'PIC', headers),
+      status: getDropdown_(sheet, 'Status', headers)
     },
     organizations: getOrganizations_()
   };
@@ -238,14 +238,16 @@ function pad2_(n) { return (Number(n) < 10 ? '0' : '') + Number(n); }
 /*  Dropdown (data validation) reading                                 */
 /* ------------------------------------------------------------------ */
 
-function getDropdown_(sheet, headerName) {
-  var headers = getHeaders_(sheet);
+function getDropdown_(sheet, headerName, headers) {
+  headers = headers || getHeaders_(sheet);
   var idx = headers.indexOf(headerName);
   if (idx === -1) return [];
   var lastRow = Math.max(sheet.getLastRow(), CONFIG.HEADER_ROW + 1);
   lastRow = Math.min(lastRow, CONFIG.HEADER_ROW + 500);
-  for (var r = CONFIG.HEADER_ROW + 1; r <= lastRow; r++) {
-    var dv = sheet.getRange(r, idx + 1).getDataValidation();
+  var rowCount = lastRow - CONFIG.HEADER_ROW;
+  var validations = sheet.getRange(CONFIG.HEADER_ROW + 1, idx + 1, rowCount, 1).getDataValidations();
+  for (var r = 0; r < validations.length; r++) {
+    var dv = validations[r][0];
     if (dv) {
       var values = dv.getCriteriaValues();
       if (values && values[0] && values[0].length) {

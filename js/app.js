@@ -153,6 +153,7 @@
       };
 
       ProjectS.loadConfig();
+      this.stripRefreshParam();
       this.state.settingsLocked = true;
       this.els.sheetUrl.value = '';
       this.els.apiUrl.value = '';
@@ -164,6 +165,18 @@
       this.showVersion();
 
       this.refresh();
+    },
+
+    /* Drop the one-time cache-busting query used by Hard Refresh, so the
+     * address bar and future navigations stay clean. */
+    stripRefreshParam: function () {
+      if (!window.history || !history.replaceState) return;
+      try {
+        var url = new URL(window.location.href);
+        if (!url.searchParams.has('ps_refresh')) return;
+        url.searchParams.delete('ps_refresh');
+        history.replaceState(null, '', url.pathname + (url.search || '') + url.hash);
+      } catch (e) {}
     },
 
     /* Show the app version derived from the service worker CACHE_NAME
@@ -1330,7 +1343,15 @@
     },
 
     hardRefresh: function () {
-      var reload = function () { window.location.reload(); };
+      var reload = function () {
+        try {
+          var url = new URL(window.location.href);
+          url.searchParams.set('ps_refresh', String(Date.now()));
+          window.location.replace(url.toString());
+        } catch (e) {
+          window.location.reload();
+        }
+      };
       var jobs = [];
       try {
         if (window.caches && caches.keys) {
@@ -1340,9 +1361,13 @@
         }
       } catch (e) {}
       try {
-        if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+          }));
+        } else if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
           jobs.push(navigator.serviceWorker.getRegistration().then(function (reg) {
-            return reg ? reg.update() : null;
+            return reg ? reg.unregister() : null;
           }));
         }
       } catch (e) {}
