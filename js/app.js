@@ -16,6 +16,7 @@
       internalFilter: 'all',
       search: '',
       valueFilter: { purpose: '', pic: '', organization: '' },
+      relateFilter: '',
       editingRow: null,
       settingsLocked: false
     },
@@ -74,6 +75,9 @@
         valueFilterToggle: document.getElementById('valueFilterToggle'),
         valueFilterPanel: document.getElementById('valueFilterPanel'),
         valueSum: document.getElementById('valueSum'),
+        relateFilter: document.getElementById('relateFilter'),
+        relateList: document.getElementById('relateList'),
+        relateEmpty: document.getElementById('relateEmpty'),
         searchInput: document.getElementById('searchInput'),
         filterToggle: document.getElementById('filterToggle'),
         filterChips: document.getElementById('filterChips'),
@@ -284,6 +288,17 @@
 
       this.els.valueFilterToggle.addEventListener('click', function () {
         self.els.valueFilterPanel.classList.toggle('hidden');
+      });
+
+      this.els.relateFilter.addEventListener('change', function () {
+        self.state.relateFilter = self.els.relateFilter.value;
+        self.renderRelated();
+      });
+
+      this.els.relateList.addEventListener('click', function (e) {
+        var row = e.target.closest ? e.target.closest('.relate-row') : null;
+        if (!row || !self.els.relateList.contains(row)) return;
+        self.gotoTask(row.getAttribute('data-task-id'));
       });
 
       this.els.saveBtn.addEventListener('click', function () { self.saveConfig(); });
@@ -726,6 +741,7 @@
       });
 
       this.renderValueFilter();
+      this.renderRelated();
     },
 
     renderValueFilter: function () {
@@ -773,6 +789,71 @@
       this.els.valueSum.textContent = sum.toLocaleString('en-US');
     },
 
+    renderRelated: function () {
+      var self = this;
+      var groups = this.relationGroups().groups.filter(function (g) {
+        return g.relatedTasks.length > 0;
+      });
+      var wanted = String(this.state.relateFilter || '').trim().toLowerCase();
+      var selectedGroup = null;
+      var selectedId = '';
+
+      if (wanted) {
+        groups.some(function (g) {
+          g.relatedTasks.some(function (t) {
+            if (String(t['Task-ID'] || '').trim().toLowerCase() !== wanted) return false;
+            selectedGroup = g;
+            selectedId = String(t['Task-ID'] || '').trim();
+            return true;
+          });
+          return !!selectedGroup;
+        });
+      }
+      this.state.relateFilter = selectedId;
+
+      var options = [];
+      groups.forEach(function (g) { options = options.concat(g.relatedTasks); });
+      options.sort(function (a, b) {
+        return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
+      });
+
+      var optionHtml = ['<option value="">All related tasks</option>'];
+      options.forEach(function (t) {
+        var id = String(t['Task-ID'] || '').trim();
+        optionHtml.push('<option value="' + escapeHtml(id) + '">' + escapeHtml(id) + '</option>');
+      });
+      this.els.relateFilter.innerHTML = optionHtml.join('');
+      this.els.relateFilter.value = selectedId;
+      this.els.relateFilter.classList.toggle('hidden', groups.length === 0);
+
+      var shown = selectedGroup ? [selectedGroup] : groups;
+      this.els.relateList.classList.toggle('hidden', shown.length === 0);
+      this.els.relateEmpty.classList.toggle('hidden', shown.length > 0);
+      this.els.relateList.innerHTML = shown.map(function (g) {
+        var rows = g.relatedTasks.map(function (t) {
+          var c = self.statusColor(t.Status);
+          var id = String(t['Task-ID'] || '').trim();
+          var name = String(t['Task name'] || '').trim() || '-';
+          var rel = String(t['Task Relate'] || '').trim();
+          return '<button type="button" class="relate-row" data-task-id="' + escapeHtml(id) + '">' +
+            '<span class="relate-row-main">' +
+              '<span class="relate-row-top">' +
+                '<span class="relate-id">' + escapeHtml(id || 'No ID') + '</span>' +
+                '<span class="relate-badge" style="--rc:' + c.card + '">' + escapeHtml(t.Status || 'Unassigned') + '</span>' +
+              '</span>' +
+              '<span class="relate-name">' + escapeHtml(name) + '</span>' +
+              (rel ? '<span class="relate-link">Relates ' + escapeHtml(rel) + '</span>' : '') +
+            '</span>' +
+            '<span class="relate-go">' + svgIcon('arrow') + '</span>' +
+          '</button>';
+        }).join('');
+        return '<div class="relate-group ' + g.className + '">' +
+          '<div class="relate-group-head"><span class="relate-group-title">' +
+            g.relatedTasks.length + ' related task' + (g.relatedTasks.length === 1 ? '' : 's') +
+            '</span></div>' + rows + '</div>';
+      }).join('');
+    },
+
     renderInternalFilter: function () {
       var self = this;
       this.els.internalFilter.querySelectorAll('.chip').forEach(function (chip) {
@@ -800,15 +881,16 @@
       }).join('');
     },
 
-    relateColorMap: function () {
+    relationGroups: function () {
+      var tasks = this.state.tasks;
       var rowById = {};
-      this.state.tasks.forEach(function (t) {
-        var id = String(t['Task-ID'] || '').trim();
-        if (id) rowById[id] = t.row;
+      tasks.forEach(function (t) {
+        var id = String(t['Task-ID'] || '').trim().toLowerCase();
+        if (id && rowById[id] === undefined) rowById[id] = t.row;
       });
 
       var parent = {};
-      this.state.tasks.forEach(function (t) { parent[t.row] = t.row; });
+      tasks.forEach(function (t) { parent[t.row] = t.row; });
       function find(x) {
         if (parent[x] !== x) parent[x] = find(parent[x]);
         return parent[x];
@@ -818,30 +900,51 @@
         if (ra !== rb) parent[ra] = rb;
       }
 
-      this.state.tasks.forEach(function (t) {
-        var rel = String(t['Task Relate'] || '').trim();
-        if (rel && rowById[rel] && rowById[rel] !== t.row) union(t.row, rowById[rel]);
+      tasks.forEach(function (t) {
+        var rel = String(t['Task Relate'] || '').trim().toLowerCase();
+        var target = rel ? rowById[rel] : undefined;
+        if (target !== undefined && target !== t.row) union(t.row, target);
       });
 
-      var compSize = {};
-      this.state.tasks.forEach(function (t) {
-        var r = find(t.row);
-        compSize[r] = (compSize[r] || 0) + 1;
-      });
-
-      var colorIdx = 0;
-      var rootColor = {};
-      var map = {};
-      this.state.tasks.forEach(function (t) {
-        var r = find(t.row);
-        if ((compSize[r] || 0) < 2) return;
-        if (rootColor[r] === undefined) {
-          rootColor[r] = 'rel-grp-' + (colorIdx % 8);
-          colorIdx++;
+      var rootTasks = {};
+      var order = [];
+      tasks.forEach(function (t) {
+        var root = find(t.row);
+        if (!rootTasks[root]) {
+          rootTasks[root] = [];
+          order.push(root);
         }
-        map[t.row] = rootColor[r];
+        rootTasks[root].push(t);
       });
-      return map;
+
+      function idOf(t) { return String(t['Task-ID'] || '').trim(); }
+      function sortById(a, b) {
+        return idOf(a).localeCompare(idOf(b), undefined, { numeric: true });
+      }
+
+      var raw = [];
+      order.forEach(function (root) {
+        var list = rootTasks[root];
+        if (list.length < 2) return;
+        raw.push(list.slice().sort(sortById));
+      });
+      raw.sort(function (a, b) { return sortById(a[0], b[0]); });
+
+      var groups = [];
+      var rowClass = {};
+      raw.forEach(function (list, idx) {
+        var cls = 'rel-grp-' + (idx % 8);
+        var relatedTasks = list.filter(function (t) {
+          return String(t['Task Relate'] || '').trim() !== '';
+        });
+        groups.push({ className: cls, tasks: list, relatedTasks: relatedTasks });
+        list.forEach(function (t) { rowClass[t.row] = cls; });
+      });
+      return { groups: groups, rowClass: rowClass };
+    },
+
+    relateColorMap: function () {
+      return this.relationGroups().rowClass;
     },
 
     renderTasks: function () {

@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://docs.google.com" crossorigin>
   <link rel="dns-prefetch" href="https://docs.google.com">
   <link rel="dns-prefetch" href="https://script.google.com">
-  <link rel="stylesheet" href="css/styles.css?v=49">
+  <link rel="stylesheet" href="css/styles.css?v=50">
   <script>
     (function () {
       var saved;
@@ -150,6 +150,17 @@
         <div class="value-sum-row">
           <span class="value-sum-label">Total Value</span>
           <span id="valueSum" class="value-sum">0</span>
+        </div>
+      </div>
+      <div class="card-block">
+        <div class="relate-head">
+          <h3 class="block-title">Related Tasks</h3>
+          <select id="relateFilter" class="relate-filter" aria-label="Filter related tasks"></select>
+        </div>
+        <div id="relateList" class="relate-list"></div>
+        <div id="relateEmpty" class="relate-empty hidden">
+          <p>No related tasks yet.</p>
+          <p class="relate-empty-sub">Link tasks with Task Relate to see them here.</p>
         </div>
       </div>
     </section>
@@ -490,7 +501,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=29"></script>
-  <script src="js/app.js?v=58"></script>
+  <script src="js/app.js?v=61"></script>
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;
