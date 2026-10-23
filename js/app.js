@@ -299,6 +299,12 @@
       });
 
       this.els.relateList.addEventListener('click', function (e) {
+        var name = e.target.closest ? e.target.closest('.relate-group-name') : null;
+        if (name && self.els.relateList.contains(name)) {
+          e.preventDefault();
+          self.gotoTask(name.getAttribute('data-task-id'));
+          return;
+        }
         var row = e.target.closest ? e.target.closest('.relate-row') : null;
         if (!row || !self.els.relateList.contains(row)) return;
         self.gotoTask(row.getAttribute('data-task-id'));
@@ -446,13 +452,17 @@
       var id = String(taskId || '').trim();
       if (!id) return;
       var self = this;
+      var match = this.state.tasks.find(function (t) {
+        return String(t['Task-ID'] || '').trim().toLowerCase() === id.toLowerCase();
+      });
+      var canonical = match ? String(match['Task-ID'] || '').trim() : id;
       this.state.filter = 'All';
       this.state.internalFilter = 'all';
-      this.state.search = id.toLowerCase();
-      if (this.els.searchInput) this.els.searchInput.value = id;
+      this.state.search = canonical.toLowerCase();
+      if (this.els.searchInput) this.els.searchInput.value = canonical;
       this.switchView('tasks');
       this.hideToast();
-      var escaped = (window.CSS && CSS.escape) ? CSS.escape(id) : id.replace(/["\\]/g, '\\$&');
+      var escaped = (window.CSS && CSS.escape) ? CSS.escape(canonical) : canonical.replace(/["\\]/g, '\\$&');
       setTimeout(function () {
         var card = self.els.taskList.querySelector('[data-task-id="' + escaped + '"]');
         if (!card) return;
@@ -895,12 +905,16 @@
           var key = rel.toLowerCase();
           if (!rel || seenRelates[key]) return;
           seenRelates[key] = true;
-          relates.push(self.relateShortLabel(rel));
+          relates.push({ id: rel, label: self.relateShortLabel(rel) });
         });
+        var relatesHtml = relates.map(function (r) {
+          return '<a href="#" class="relate-group-name" data-task-id="' + escapeHtml(r.id) + '">' +
+            escapeHtml(r.label) + '</a>';
+        }).join(', ');
         return '<div class="relate-group ' + g.className + '">' +
           '<div class="relate-group-head"><span class="relate-group-title">' +
             g.relatedTasks.length + ' related task' + (g.relatedTasks.length === 1 ? '' : 's') +
-            (relates.length ? ' <span class="relate-group-names">(' + escapeHtml(relates.join(', ')) + ')</span>' : '') +
+            (relates.length ? ' <span class="relate-group-names">(' + relatesHtml + ')</span>' : '') +
             '</span></div>' + rows + '</div>';
       }).join('');
     },

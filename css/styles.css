@@ -691,6 +691,15 @@ main {
   font-weight: 700;
   color: var(--ink-2);
 }
+.relate-group-name {
+  color: var(--primary);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.relate-group-name:hover { color: var(--primary-3); }
 
 .relate-row {
   width: 100%;
