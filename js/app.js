@@ -518,7 +518,10 @@
 
     applyData: function (res) {
       this.state.columns = res.columns || [];
-      this.state.tasks = res.tasks || [];
+      this.state.tasks = (res.tasks || []).map(function (t, i) {
+        if (t.row === undefined || t.row === null || t.row === '') t.row = i + 2;
+        return t;
+      });
       this.state.options = {
         purpose: res.options && res.options.purpose ? res.options.purpose : [],
         pic: res.options && res.options.pic ? res.options.pic : [],
@@ -817,8 +820,19 @@
 
     renderRelated: function () {
       var self = this;
+      function sortByDateDesc(a, b) {
+        var byDate = String(b.Date || '').localeCompare(String(a.Date || ''));
+        if (byDate) return byDate;
+        return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
+      }
       var groups = this.relationGroups().groups.filter(function (g) {
         return g.relatedTasks.length > 0;
+      });
+      groups.forEach(function (g) {
+        g.relatedTasks.sort(sortByDateDesc);
+      });
+      groups.sort(function (ga, gb) {
+        return sortByDateDesc(ga.relatedTasks[0] || {}, gb.relatedTasks[0] || {});
       });
       var wanted = String(this.state.relateFilter || '').trim().toLowerCase();
       var selectedGroup = null;
@@ -842,11 +856,7 @@
       options = options.filter(function (t) {
         return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
       });
-      options.sort(function (a, b) {
-        var byDate = String(b.Date || '').localeCompare(String(a.Date || ''));
-        if (byDate) return byDate;
-        return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
-      });
+      options.sort(sortByDateDesc);
 
       var optionHtml = ['<option value="">All related tasks</option>'];
       options.forEach(function (t) {
