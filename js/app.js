@@ -78,6 +78,8 @@
         relateFilter: document.getElementById('relateFilter'),
         relateList: document.getElementById('relateList'),
         relateEmpty: document.getElementById('relateEmpty'),
+        relateToggle: document.getElementById('relateToggle'),
+        relateBody: document.getElementById('relateBody'),
         searchInput: document.getElementById('searchInput'),
         filterToggle: document.getElementById('filterToggle'),
         filterChips: document.getElementById('filterChips'),
@@ -244,7 +246,8 @@
       var panels = [
         { key: 'conn', label: 'Google Sheets Connection', toggle: this.els.connToggle, body: this.els.connBody },
         { key: 'db', label: 'Database', toggle: this.els.dbToggle, body: this.els.dbBody },
-        { key: 'pwd', label: 'Change Password', toggle: this.els.pwdToggle, body: this.els.pwdBody }
+        { key: 'pwd', label: 'Change Password', toggle: this.els.pwdToggle, body: this.els.pwdBody },
+        { key: 'relate', label: 'Task Links', toggle: this.els.relateToggle, body: this.els.relateBody }
       ];
       panels.forEach(function (p) {
         if (!p.toggle || !p.body) return;
@@ -556,6 +559,30 @@
       return nm ? target + ' - ' + nm : target;
     },
 
+    taskNameOf: function (taskId) {
+      var target = String(taskId || '').trim().toLowerCase();
+      if (!target) return '';
+      var match = this.state.tasks.find(function (t) {
+        return String(t['Task-ID'] || '').trim().toLowerCase() === target;
+      });
+      return match ? String(match['Task name'] || '').trim() : '';
+    },
+
+    relateValueLabel: function (taskId) {
+      var id = String(taskId || '').trim();
+      if (!id) return '';
+      var nm = this.taskNameOf(id);
+      return nm ? id + ' (' + nm + ')' : id;
+    },
+
+    relateShortLabel: function (taskId) {
+      var id = String(taskId || '').trim();
+      if (!id) return '';
+      var shortId = id.replace(/^task-/i, '');
+      var nm = this.taskNameOf(id);
+      return nm ? shortId + ' - ' + nm : shortId;
+    },
+
     orgNameExists: function (name, exceptRow) {
       var target = String(name || '').trim().toLowerCase();
       if (!target) return false;
@@ -741,7 +768,6 @@
       });
 
       this.renderValueFilter();
-      this.renderRelated();
     },
 
     renderValueFilter: function () {
@@ -823,7 +849,7 @@
       var optionHtml = ['<option value="">All related tasks</option>'];
       options.forEach(function (t) {
         var id = String(t['Task-ID'] || '').trim();
-        optionHtml.push('<option value="' + escapeHtml(id) + '">' + escapeHtml(id) + '</option>');
+        optionHtml.push('<option value="' + escapeHtml(id) + '">' + escapeHtml(self.relateValueLabel(id)) + '</option>');
       });
       this.els.relateFilter.innerHTML = optionHtml.join('');
       this.els.relateFilter.value = selectedId;
@@ -845,14 +871,24 @@
                 '<span class="relate-badge" style="--rc:' + c.card + '">' + escapeHtml(t.Status || 'Unassigned') + '</span>' +
               '</span>' +
               '<span class="relate-name">' + escapeHtml(name) + '</span>' +
-              (rel ? '<span class="relate-link">Relates ' + escapeHtml(rel) + '</span>' : '') +
+              (rel ? '<span class="relate-link">Relates ' + escapeHtml(self.relateValueLabel(rel)) + '</span>' : '') +
             '</span>' +
             '<span class="relate-go">' + svgIcon('arrow') + '</span>' +
           '</button>';
         }).join('');
+        var relates = [];
+        var seenRelates = {};
+        g.relatedTasks.forEach(function (t) {
+          var rel = String(t['Task Relate'] || '').trim();
+          var key = rel.toLowerCase();
+          if (!rel || seenRelates[key]) return;
+          seenRelates[key] = true;
+          relates.push(self.relateShortLabel(rel));
+        });
         return '<div class="relate-group ' + g.className + '">' +
           '<div class="relate-group-head"><span class="relate-group-title">' +
             g.relatedTasks.length + ' related task' + (g.relatedTasks.length === 1 ? '' : 's') +
+            (relates.length ? ' <span class="relate-group-names">(' + escapeHtml(relates.join(', ')) + ')</span>' : '') +
             '</span></div>' + rows + '</div>';
       }).join('');
     },
@@ -951,6 +987,7 @@
     },
 
     renderTasks: function () {
+      this.renderRelated();
       this.renderChips();
       this.renderInternalFilter();
 
@@ -983,7 +1020,7 @@
       var overdue = this.isOverdue(t);
       var dueDate = t['Due Date'] ? '<span class="due-date' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue ' : '') + this.fmtDate(t['Due Date']) + '</span>' : '';
       var note = t.Note ? metaTag('note', t.Note) : '';
-      var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + t['Task Relate']) : '';
+      var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + this.relateValueLabel(t['Task Relate'])) : '';
       var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
       var relClassAttr = relClass ? ' ' + relClass : '';

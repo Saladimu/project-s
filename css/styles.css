@@ -624,19 +624,16 @@ main {
 }
 
 /* ---------- Related tasks ---------- */
-.relate-head {
+.relate-block .block-body {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 12px;
 }
-.relate-head .block-title { margin: 0; }
+.relate-block .block-body.collapsed { display: none; }
 
 .relate-filter {
-  width: auto;
-  max-width: 65%;
-  flex: 0 1 320px;
+  width: 100%;
+  max-width: 100%;
   padding: 9px 11px;
   font-size: 12.5px;
   font-weight: 700;
@@ -687,6 +684,12 @@ main {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+.relate-group-names {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  color: var(--ink-2);
 }
 
 .relate-row {
@@ -1673,10 +1676,9 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
   }
 }
 
-/* ---------- Small screens: stack related-task filter ---------- */
+/* ---------- Small screens: related-task filter ---------- */
 @media (max-width: 479px) {
-  .relate-head { flex-wrap: wrap; }
-  .relate-filter { max-width: 100%; flex: 1 1 100%; }
+  .relate-filter { max-width: 100%; }
 }
 
 /* ---------- Tablet (>= 768px) ---------- */
