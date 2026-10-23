@@ -813,6 +813,9 @@
 
       var options = [];
       groups.forEach(function (g) { options = options.concat(g.relatedTasks); });
+      options = options.filter(function (t) {
+        return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
+      });
       options.sort(function (a, b) {
         return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
       });
@@ -935,7 +938,7 @@
       raw.forEach(function (list, idx) {
         var cls = 'rel-grp-' + (idx % 8);
         var relatedTasks = list.filter(function (t) {
-          return String(t['Task Relate'] || '').trim() !== '';
+          return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
         });
         groups.push({ className: cls, tasks: list, relatedTasks: relatedTasks });
         list.forEach(function (t) { rowClass[t.row] = cls; });
