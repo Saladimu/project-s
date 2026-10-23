@@ -843,6 +843,8 @@
         return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
       });
       options.sort(function (a, b) {
+        var byDate = String(b.Date || '').localeCompare(String(a.Date || ''));
+        if (byDate) return byDate;
         return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
       });
 
