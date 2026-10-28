@@ -81,6 +81,8 @@
         relateFilter: document.getElementById('relateFilter'),
         relateList: document.getElementById('relateList'),
         relateEmpty: document.getElementById('relateEmpty'),
+        relateToggle: document.getElementById('relateToggle'),
+        relateBody: document.getElementById('relateBody'),
         searchInput: document.getElementById('searchInput'),
         filterToggle: document.getElementById('filterToggle'),
         filterChips: document.getElementById('filterChips'),
@@ -251,7 +253,8 @@
       var panels = [
         { key: 'conn', label: 'Google Sheets Connection', toggle: this.els.connToggle, body: this.els.connBody },
         { key: 'db', label: 'Database', toggle: this.els.dbToggle, body: this.els.dbBody },
-        { key: 'pwd', label: 'Change Password', toggle: this.els.pwdToggle, body: this.els.pwdBody }
+        { key: 'pwd', label: 'Change Password', toggle: this.els.pwdToggle, body: this.els.pwdBody },
+        { key: 'relate', label: 'Task Links', toggle: this.els.relateToggle, body: this.els.relateBody }
       ];
       panels.forEach(function (p) {
         if (!p.toggle || !p.body) return;
@@ -303,6 +306,12 @@
       });
 
       this.els.relateList.addEventListener('click', function (e) {
+        var name = e.target.closest ? e.target.closest('.relate-group-name') : null;
+        if (name && self.els.relateList.contains(name)) {
+          e.preventDefault();
+          self.gotoTask(name.getAttribute('data-task-id'));
+          return;
+        }
         var row = e.target.closest ? e.target.closest('.relate-row') : null;
         if (!row || !self.els.relateList.contains(row)) return;
         self.gotoTask(row.getAttribute('data-task-id'));
@@ -452,13 +461,17 @@
       var id = String(taskId || '').trim();
       if (!id) return;
       var self = this;
+      var match = this.state.tasks.find(function (t) {
+        return String(t['Task-ID'] || '').trim().toLowerCase() === id.toLowerCase();
+      });
+      var canonical = match ? String(match['Task-ID'] || '').trim() : id;
       this.state.filter = 'All';
       this.state.internalFilter = 'all';
-      this.state.search = id.toLowerCase();
-      if (this.els.searchInput) this.els.searchInput.value = id;
+      this.state.search = canonical.toLowerCase();
+      if (this.els.searchInput) this.els.searchInput.value = canonical;
       this.switchView('tasks');
       this.hideToast();
-      var escaped = (window.CSS && CSS.escape) ? CSS.escape(id) : id.replace(/["\\]/g, '\\$&');
+      var escaped = (window.CSS && CSS.escape) ? CSS.escape(canonical) : canonical.replace(/["\\]/g, '\\$&');
       setTimeout(function () {
         var card = self.els.taskList.querySelector('[data-task-id="' + escaped + '"]');
         if (!card) return;
@@ -524,7 +537,10 @@
 
     applyData: function (res) {
       this.state.columns = res.columns || [];
-      this.state.tasks = res.tasks || [];
+      this.state.tasks = (res.tasks || []).map(function (t, i) {
+        if (t.row === undefined || t.row === null || t.row === '') t.row = i + 2;
+        return t;
+      });
       this.state.options = {
         purpose: res.options && res.options.purpose ? res.options.purpose : [],
         pic: res.options && res.options.pic ? res.options.pic : [],
@@ -563,6 +579,30 @@
       });
       var nm = match ? String(match['Task name'] || '').trim() : '';
       return nm ? target + ' - ' + nm : target;
+    },
+
+    taskNameOf: function (taskId) {
+      var target = String(taskId || '').trim().toLowerCase();
+      if (!target) return '';
+      var match = this.state.tasks.find(function (t) {
+        return String(t['Task-ID'] || '').trim().toLowerCase() === target;
+      });
+      return match ? String(match['Task name'] || '').trim() : '';
+    },
+
+    relateValueLabel: function (taskId) {
+      var id = String(taskId || '').trim();
+      if (!id) return '';
+      var nm = this.taskNameOf(id);
+      return nm ? id + ' (' + nm + ')' : id;
+    },
+
+    relateShortLabel: function (taskId) {
+      var id = String(taskId || '').trim();
+      if (!id) return '';
+      var shortId = id.replace(/^task-/i, '');
+      var nm = this.taskNameOf(id);
+      return nm ? shortId + ' - ' + nm : shortId;
     },
 
     orgNameExists: function (name, exceptRow) {
@@ -750,7 +790,6 @@
       });
 
       this.renderValueFilter();
-      this.renderRelated();
     },
 
     renderValueFilter: function () {
@@ -800,8 +839,19 @@
 
     renderRelated: function () {
       var self = this;
+      function sortByDateDesc(a, b) {
+        var byDate = String(b.Date || '').localeCompare(String(a.Date || ''));
+        if (byDate) return byDate;
+        return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
+      }
       var groups = this.relationGroups().groups.filter(function (g) {
         return g.relatedTasks.length > 0;
+      });
+      groups.forEach(function (g) {
+        g.relatedTasks.sort(sortByDateDesc);
+      });
+      groups.sort(function (ga, gb) {
+        return sortByDateDesc(ga.relatedTasks[0] || {}, gb.relatedTasks[0] || {});
       });
       var wanted = String(this.state.relateFilter || '').trim().toLowerCase();
       var selectedGroup = null;
@@ -822,14 +872,15 @@
 
       var options = [];
       groups.forEach(function (g) { options = options.concat(g.relatedTasks); });
-      options.sort(function (a, b) {
-        return String(a['Task-ID'] || '').localeCompare(String(b['Task-ID'] || ''), undefined, { numeric: true });
+      options = options.filter(function (t) {
+        return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
       });
+      options.sort(sortByDateDesc);
 
       var optionHtml = ['<option value="">All related tasks</option>'];
       options.forEach(function (t) {
         var id = String(t['Task-ID'] || '').trim();
-        optionHtml.push('<option value="' + escapeHtml(id) + '">' + escapeHtml(id) + '</option>');
+        optionHtml.push('<option value="' + escapeHtml(id) + '">' + escapeHtml(self.relateValueLabel(id)) + '</option>');
       });
       this.els.relateFilter.innerHTML = optionHtml.join('');
       this.els.relateFilter.value = selectedId;
@@ -851,14 +902,28 @@
                 '<span class="relate-badge" style="--rc:' + c.card + '">' + escapeHtml(t.Status || 'Unassigned') + '</span>' +
               '</span>' +
               '<span class="relate-name">' + escapeHtml(name) + '</span>' +
-              (rel ? '<span class="relate-link">Relates ' + escapeHtml(rel) + '</span>' : '') +
+              (rel ? '<span class="relate-link">Relates ' + escapeHtml(self.relateValueLabel(rel)) + '</span>' : '') +
             '</span>' +
             '<span class="relate-go">' + svgIcon('arrow') + '</span>' +
           '</button>';
         }).join('');
+        var relates = [];
+        var seenRelates = {};
+        g.relatedTasks.forEach(function (t) {
+          var rel = String(t['Task Relate'] || '').trim();
+          var key = rel.toLowerCase();
+          if (!rel || seenRelates[key]) return;
+          seenRelates[key] = true;
+          relates.push({ id: rel, label: self.relateShortLabel(rel) });
+        });
+        var relatesHtml = relates.map(function (r) {
+          return '<a href="#" class="relate-group-name" data-task-id="' + escapeHtml(r.id) + '">' +
+            escapeHtml(r.label) + '</a>';
+        }).join(', ');
         return '<div class="relate-group ' + g.className + '">' +
           '<div class="relate-group-head"><span class="relate-group-title">' +
             g.relatedTasks.length + ' related task' + (g.relatedTasks.length === 1 ? '' : 's') +
+            (relates.length ? ' <span class="relate-group-names">(' + relatesHtml + ')</span>' : '') +
             '</span></div>' + rows + '</div>';
       }).join('');
     },
@@ -944,7 +1009,7 @@
       raw.forEach(function (list, idx) {
         var cls = 'rel-grp-' + (idx % 8);
         var relatedTasks = list.filter(function (t) {
-          return String(t['Task Relate'] || '').trim() !== '';
+          return String(t['Task-ID'] || '').trim() !== '' && String(t['Task Relate'] || '').trim() !== '';
         });
         groups.push({ className: cls, tasks: list, relatedTasks: relatedTasks });
         list.forEach(function (t) { rowClass[t.row] = cls; });
@@ -957,6 +1022,7 @@
     },
 
     renderTasks: function () {
+      this.renderRelated();
       this.renderChips();
       this.renderInternalFilter();
 
@@ -989,7 +1055,7 @@
       var overdue = this.isOverdue(t);
       var dueDate = t['Due Date'] ? '<span class="due-date' + (overdue ? ' overdue' : '') + '">' + (overdue ? 'Overdue ' : '') + this.fmtDate(t['Due Date']) + '</span>' : '';
       var note = t.Note ? metaTag('note', t.Note) : '';
-      var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + t['Task Relate']) : '';
+      var relate = t['Task Relate'] ? metaTag('relate', 'Relates ' + this.relateValueLabel(t['Task Relate'])) : '';
       var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
       var relClassAttr = relClass ? ' ' + relClass : '';
