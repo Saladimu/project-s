@@ -1651,6 +1651,38 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
 .backup-item .backup-go { color: var(--muted-2); flex-shrink: 0; }
 .backup-item .backup-go .icon { width: 16px; height: 16px; }
 
+.backup-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+.backup-pager.hidden { display: none; }
+.backup-page-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: 10px;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.backup-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.backup-page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.backup-page-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

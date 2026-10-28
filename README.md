@@ -154,8 +154,8 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
     formula from the first data row is propagated through every data row of the backup so it is
     fully formula-driven.
   - **Restore** lists all `TaskBAK-dd-mm-yy` sheets in **descending date order** (newest first),
-    or shows "No backup TaskList" when none exist. Choosing a backup overwrites the current
-    TaskList with the backup values,
+    **6 per page** with Prev/Next paging, or shows "No backup TaskList" when none exist. Choosing
+    a backup overwrites the current TaskList with the backup values,
     then brings back the `Task-ID` (B2) and `Duration` (L2) formulas: `Task-ID` stays a single
     array formula in `B2` and the `Duration` formula is propagated through all restored rows.
     Stale values pasted below the B2 array formula are cleared so it never shows `#REF!`.
@@ -391,6 +391,13 @@ flowchart TD
 ```
 
 ## Changelog
+
+### 2026-10-28 - Restore backup pagination
+
+- The **Restore** modal now shows at most **6 backups per page**, newest first, with **Prev** /
+  **Next** controls and a `Page X of Y` label. The pager is hidden when there is only one page.
+- Bumped `js/app.js` to `?v=62`, `css/styles.css` to `?v=51`, and `CACHE_NAME` to
+  `project-s-v22`.
 
 ### 2026-10-22 - Related Tasks dashboard panel
 

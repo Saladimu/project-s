@@ -4,6 +4,7 @@
   var DEFAULT_PWD = '00000';
   var SETTINGS_IDLE_MS = 5 * 60 * 1000;
   var GMT7_OFFSET_MS = 7 * 60 * 60 * 1000;
+  var BACKUP_PAGE_SIZE = 6;
 
   var App = {
     state: {
@@ -18,6 +19,8 @@
       valueFilter: { purpose: '', pic: '', organization: '' },
       relateFilter: '',
       editingRow: null,
+      restoreBackups: [],
+      restorePage: 0,
       settingsLocked: false
     },
 
@@ -104,6 +107,10 @@
         restoreHint: document.getElementById('restoreHint'),
         backupList: document.getElementById('backupList'),
         backupEmpty: document.getElementById('backupEmpty'),
+        backupPager: document.getElementById('backupPager'),
+        backupPageLabel: document.getElementById('backupPageLabel'),
+        backupPrev: document.getElementById('backupPrev'),
+        backupNext: document.getElementById('backupNext'),
         secLocked: document.getElementById('secLocked'),
         secUnlocked: document.getElementById('secUnlocked'),
         unlockPwd: document.getElementById('unlockPwd'),
@@ -306,6 +313,8 @@
 
       this.els.backupBtn.addEventListener('click', function () { self.backupTaskList(); });
       this.els.restoreBtn.addEventListener('click', function () { self.openRestore(); });
+      this.els.backupPrev.addEventListener('click', function () { self.changeRestorePage(-1); });
+      this.els.backupNext.addEventListener('click', function () { self.changeRestorePage(1); });
       this.els.wipeBtn.addEventListener('click', function () { self.wipeTaskList(); });
 
       this.els.refreshBtn.addEventListener('click', function () {
@@ -1568,9 +1577,12 @@
 
     openRestore: function () {
       var self = this;
+      this.state.restoreBackups = [];
+      this.state.restorePage = 0;
       this.els.backupList.innerHTML = '';
       this.els.backupEmpty.classList.add('hidden');
       this.els.restoreHint.classList.remove('hidden');
+      this.els.backupPager.classList.add('hidden');
       this.openModal('restoreModal');
       ProjectS.call('listBackups', { action: 'listBackups' }, 'GET').then(function (res) {
         if (!res.ok) {
@@ -1578,25 +1590,50 @@
           self.els.backupList.innerHTML = '<p class="muted">' + escapeHtml(res.error || 'Failed to load backups.') + '</p>';
           return;
         }
-        var backups = (res.backups || []).slice().sort(function (a, b) {
+        self.state.restoreBackups = (res.backups || []).slice().sort(function (a, b) {
           return backupDateKey(b) - backupDateKey(a);
         });
-        self.els.backupEmpty.classList.toggle('hidden', backups.length > 0);
-        self.els.restoreHint.classList.toggle('hidden', backups.length === 0);
-        self.els.backupList.innerHTML = backups.map(function (name) {
-          return '<button class="backup-item" data-name="' + escapeHtml(name) + '">' +
-            '<span class="backup-icon">' + svgIcon('backup') + '</span>' +
-            '<span class="backup-name">' + escapeHtml(name) + '</span>' +
-            '<span class="backup-go">' + svgIcon('arrow') + '</span>' +
-            '</button>';
-        }).join('');
+        self.els.backupEmpty.classList.toggle('hidden', self.state.restoreBackups.length > 0);
+        self.els.restoreHint.classList.toggle('hidden', self.state.restoreBackups.length === 0);
+        self.renderRestorePage();
+      });
+    },
 
-        self.els.backupList.querySelectorAll('.backup-item').forEach(function (item) {
-          item.addEventListener('click', function () {
-            self.confirmRestore(item.getAttribute('data-name'));
-          });
+    renderRestorePage: function () {
+      var self = this;
+      var backups = this.state.restoreBackups;
+      var pages = Math.max(1, Math.ceil(backups.length / BACKUP_PAGE_SIZE));
+      if (this.state.restorePage >= pages) this.state.restorePage = pages - 1;
+      if (this.state.restorePage < 0) this.state.restorePage = 0;
+      var start = this.state.restorePage * BACKUP_PAGE_SIZE;
+      var pageItems = backups.slice(start, start + BACKUP_PAGE_SIZE);
+
+      this.els.backupList.innerHTML = pageItems.map(function (name) {
+        return '<button class="backup-item" data-name="' + escapeHtml(name) + '">' +
+          '<span class="backup-icon">' + svgIcon('backup') + '</span>' +
+          '<span class="backup-name">' + escapeHtml(name) + '</span>' +
+          '<span class="backup-go">' + svgIcon('arrow') + '</span>' +
+          '</button>';
+      }).join('');
+
+      this.els.backupPager.classList.toggle('hidden', pages <= 1);
+      this.els.backupPageLabel.textContent = 'Page ' + (this.state.restorePage + 1) + ' of ' + pages;
+      this.els.backupPrev.disabled = this.state.restorePage === 0;
+      this.els.backupNext.disabled = this.state.restorePage >= pages - 1;
+
+      this.els.backupList.querySelectorAll('.backup-item').forEach(function (item) {
+        item.addEventListener('click', function () {
+          self.confirmRestore(item.getAttribute('data-name'));
         });
       });
+    },
+
+    changeRestorePage: function (delta) {
+      var pages = Math.max(1, Math.ceil(this.state.restoreBackups.length / BACKUP_PAGE_SIZE));
+      var next = this.state.restorePage + delta;
+      if (next < 0 || next >= pages) return;
+      this.state.restorePage = next;
+      this.renderRestorePage();
     },
 
     confirmRestore: function (name) {

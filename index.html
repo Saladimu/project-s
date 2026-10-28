@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://docs.google.com" crossorigin>
   <link rel="dns-prefetch" href="https://docs.google.com">
   <link rel="dns-prefetch" href="https://script.google.com">
-  <link rel="stylesheet" href="css/styles.css?v=50">
+  <link rel="stylesheet" href="css/styles.css?v=51">
   <script>
     (function () {
       var saved;
@@ -486,6 +486,11 @@
       <div class="modal-body">
         <p class="muted" id="restoreHint">Choose a backup to restore. The current TaskList will be backed up first.</p>
         <div id="backupList" class="backup-list"></div>
+        <div id="backupPager" class="backup-pager hidden">
+          <button id="backupPrev" class="backup-page-btn" type="button">Prev</button>
+          <span id="backupPageLabel" class="backup-page-label">Page 1 of 1</span>
+          <button id="backupNext" class="backup-page-btn" type="button">Next</button>
+        </div>
         <div id="backupEmpty" class="empty-state hidden">
           <p>No backup TaskList</p>
           <p class="empty-sub">Create a backup first.</p>
@@ -501,7 +506,7 @@
 
   <script src="js/cache.js?v=2"></script>
   <script src="js/api.js?v=29"></script>
-  <script src="js/app.js?v=61"></script>
+  <script src="js/app.js?v=62"></script>
   <script>
     (function () {
       if (!('serviceWorker' in navigator)) return;
