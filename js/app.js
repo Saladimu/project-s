@@ -21,7 +21,11 @@
       editingRow: null,
       restoreBackups: [],
       restorePage: 0,
-      settingsLocked: false
+      settingsLocked: false,
+      _activeModal: null,
+      _returnFocus: null,
+      _modalKeyHandler: null,
+      _modalTrapHandler: null
     },
 
     els: {},
@@ -771,11 +775,16 @@
       });
 
       var barsHtml = '';
-      var max = Math.max(1, Math.max.apply(null, all.map(function (s) { return counts[s] || 0; })));
+      /* Bars show each status as a share of the whole, so the chart always
+       * sums to ~100% and reads as a real distribution. (Normalising to the
+       * largest category instead would paint every bar full when one status
+       * dominates.) */
+      var totalTasks = all.reduce(function (acc, s) { return acc + (counts[s] || 0); }, 0);
+      var denom = totalTasks || 1;
       all.forEach(function (s) {
         var c = self.statusColor(s);
         var n = counts[s] || 0;
-        var pct = Math.round((n / max) * 100);
+        var pct = Math.round((n / denom) * 100);
         barsHtml += '<div class="sb-row" data-status="' + escapeHtml(s) + '" style="--sc:' + c.bar + '">' +
           '<div class="sb-label"><svg class="icon sb-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></div>' +
           '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%"></div></div>' +
@@ -1875,8 +1884,99 @@
 
     /* ---------------- ui helpers ---------------- */
 
-    openModal: function (id) { document.getElementById(id).classList.add('open'); },
-    closeModal: function (id) { document.getElementById(id).classList.remove('open'); },
+    /* Focusable elements inside a modal sheet, in DOM order. */
+    FOCUSABLE_SELECTOR: 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href]:not([disabled]), [tabindex]:not([tabindex="-1"])',
+
+    _collectFocusables: function (root) {
+      if (!root) return [];
+      var nodes = root.querySelectorAll(this.FOCUSABLE_SELECTOR);
+      var out = [];
+      for (var i = 0; i < nodes.length; i++) {
+        if (this._isVisible(nodes[i])) out.push(nodes[i]);
+      }
+      return out;
+    },
+
+    _isVisible: function (el) {
+      if (!el) return false;
+      if (el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
+      var rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    },
+
+    openModal: function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      /* Close any previously open modal so only one is active at a time. */
+      if (this._activeModal && this._activeModal !== id) this.closeModal(this._activeModal);
+      el.classList.add('open');
+      this._activeModal = id;
+      /* Remember where focus was so Esc can hand it back. */
+      this._returnFocus = document.activeElement && document.activeElement.focus
+        ? document.activeElement : null;
+      this._ensureModalHandlers();
+      document.addEventListener('keydown', this._modalKeyHandler);
+      /* Idempotent: a modal can be opened more than once without stacking
+       * duplicate listeners on the same element. */
+      el.removeEventListener('keydown', this._modalTrapHandler);
+      el.addEventListener('keydown', this._modalTrapHandler);
+      this.focusModalFirst(el);
+    },
+
+    closeModal: function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('open');
+      if (this._activeModal === id) this._activeModal = null;
+      if (this._modalTrapHandler) el.removeEventListener('keydown', this._modalTrapHandler);
+      if (this._modalKeyHandler) document.removeEventListener('keydown', this._modalKeyHandler);
+      this._modalKeyHandler = null;
+      this._modalTrapHandler = null;
+    },
+
+    _ensureModalHandlers: function () {
+      var self = this;
+      if (this._modalKeyHandler && this._modalTrapHandler) return;
+      if (!this._modalKeyHandler) this._modalKeyHandler = function (e) { self.handleModalKeydown(e); };
+      if (!this._modalTrapHandler) this._modalTrapHandler = function (e) { self.handleModalTrap(e); };
+    },
+
+    focusModalFirst: function (el) {
+      var focusables = this._collectFocusables(el);
+      if (focusables.length) focusables[0].focus();
+    },
+
+    /* Escape closes the active modal and returns focus to the element that
+     * opened it (the FAB, a row button, etc.). Button / overlay dismissals
+     * leave focus on the closing button, which is the more predictable path. */
+    handleModalKeydown: function (e) {
+      if (e.key !== 'Escape') return;
+      if (!this._activeModal) return;
+      var id = this._activeModal;
+      var ret = this._returnFocus;
+      this._returnFocus = null;
+      this.closeModal(id);
+      if (ret && this._isVisible(ret)) ret.focus();
+    },
+
+    /* Tab / Shift+Tab cycle focus inside the sheet; they never leak out to the
+     * (hidden) page behind the modal, and wrapping keeps a keyboard user
+     * inside the dialog instead of dropping into the bottom nav. */
+    handleModalTrap: function (e) {
+      if (e.key !== 'Tab') return;
+      var el = document.getElementById(this._activeModal);
+      if (!el) return;
+      var focusables = this._collectFocusables(el);
+      if (focusables.length === 0) { e.preventDefault(); return; }
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      var active = document.activeElement;
+      if (e.shiftKey) {
+        if (active === first || !el.contains(active)) { e.preventDefault(); last.focus(); }
+      } else {
+        if (active === last || !el.contains(active)) { e.preventDefault(); first.focus(); }
+      }
+    },
 
     setBusy: function (busy) {
       this.els.formSubmit.disabled = busy;
