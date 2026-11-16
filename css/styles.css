@@ -345,6 +345,14 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dash-amount-unit {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.7;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+  vertical-align: 1px;
+}
 .dash-amount-label {
   opacity: 0.75;
   font-size: 10.5px;
@@ -354,100 +362,93 @@ main {
   font-weight: 600;
 }
 
-.status-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+.status-title {
+  margin: 0 0 10px;
+}
+
+/* Merged status widget: each row is a tappable filter + distribution bar,
+   replacing the old cards grid and the separate "Status Distribution" block. */
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.status-card {
+.status-row {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   background: var(--surface);
-  border-radius: var(--radius);
-  padding: 16px;
   border: 1px solid var(--line);
-  border-top: 3px solid var(--sc, #94a3b8);
-  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--sc, #94a3b8);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
   cursor: pointer;
-  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), border-color 0.18s ease;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s var(--ease);
 }
-.status-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--line-strong); }
-.status-card:active { transform: scale(0.97); box-shadow: var(--shadow-sm); }
+.status-row:hover { background: var(--surface-2); box-shadow: var(--shadow); }
+.status-row:active { transform: scale(0.99); }
+.status-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-.status-card .sc-count {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.5px;
-  font-variant-numeric: tabular-nums;
-}
-.sc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-
-.status-card .sc-label {
+.sr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sr-label {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-  margin-top: 6px;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+  min-width: 0;
 }
-.status-card .sc-label span {
+.sr-label span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: capitalize;
   min-width: 0;
 }
-.sc-icon {
-  width: 15px;
-  height: 15px;
+.sr-icon {
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   color: var(--sc, #64748b);
 }
-.status-card .sc-value {
-  font-size: 14px;
+.sr-figures { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.sr-count {
+  font-size: 18px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  color: var(--ink);
+}
+.sc-value {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 3px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
-  opacity: 1;
 }
-.status-card .sc-go {
-  margin-top: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--muted-2);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.sr-track {
+  display: block;
+  margin-top: 9px;
+  height: 8px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
 }
-.status-card .sc-go .icon {
-  width: 14px;
-  height: 14px;
-  color: var(--sc, #94a3b8);
-  transition: transform 0.25s var(--ease);
-}
-.status-card .sc-go::after {
-  content: "→";
-  font-weight: 900;
-  margin-left: auto;
-  transition: transform 0.18s var(--ease);
-}
-.status-card:hover .sc-go::after { transform: translateX(3px); }
-.status-card:hover .sc-go { color: var(--sc, #64748b); }
-.status-card:hover .sc-go .icon { transform: scale(1.2); animation: nudge 0.9s ease-in-out infinite; }
-
-@keyframes nudge {
-  0%, 100% { transform: translateX(0) scale(1.2); }
-  50% { transform: translateX(2px) scale(1.25); }
+.sr-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sc, #94a3b8), var(--sc, #94a3b8));
+  transition: width 0.5s var(--ease);
 }
 
 .card-block {
@@ -513,67 +514,6 @@ main {
 .toggle:focus-visible .toggle-track { outline: 2px solid var(--primary); outline-offset: 2px; }
 [data-theme="dark"] .toggle-thumb { background: #e6eaf3; }
 
-/* Status bars */
-.status-bars { display: flex; flex-direction: column; gap: 12px; }
-.sb-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  border-radius: 10px;
-  padding: 5px 6px;
-  transition: background 0.15s ease;
-}
-.sb-row:hover { background: var(--surface-2); }
-.sb-row:active { background: var(--surface-3); }
-.sb-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 130px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
-  flex-shrink: 0;
-}
-.sb-label span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: capitalize;
-  min-width: 0;
-}
-.sb-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: var(--sc, #64748b);
-}
-.sb-track {
-  flex: 1;
-  height: 10px;
-  background: var(--surface-3);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.sb-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--sc, #94a3b8), var(--sc, #94a3b8));
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.15);
-  transition: width 0.5s var(--ease);
-}
-.sb-count {
-  width: 36px;
-  text-align: right;
-  font-size: 12.5px;
-  font-weight: 800;
-  color: var(--ink-2);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
 /* ---------- Value filter ---------- */
 .value-filter-head {
   display: flex;
@@ -621,6 +561,14 @@ main {
   font-variant-numeric: tabular-nums;
   color: var(--primary);
   letter-spacing: -0.3px;
+}
+.value-sum-unit {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.75;
+  letter-spacing: 0.4px;
+  margin-right: 5px;
+  vertical-align: 2px;
 }
 
 /* ---------- Related tasks ---------- */
@@ -1074,6 +1022,24 @@ main {
 .row-btn.del:hover { background: var(--danger-soft); color: var(--danger); border-color: #fecdd3; }
 .row-btn:active { transform: scale(0.95); }
 
+/* Read-only mode: replace Edit/Delete with a non-interactive status chip so
+   the row still explains why it cannot be edited. */
+.task-actions-readonly .readonly-hint,
+.org-actions-readonly .readonly-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-2);
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: default;
+}
+.readonly-hint .icon { width: 13px; height: 13px; }
+
 .task-foot-internal {
   margin-left: auto;
   display: inline-flex;
@@ -1108,6 +1074,13 @@ main {
 .empty-state .empty-icon .icon { width: 32px; height: 32px; }
 .empty-state p { margin: 4px 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 .empty-state p.empty-sub { font-size: 13px !important; font-weight: 500; opacity: 0.75; color: var(--muted); }
+.empty-state .btn {
+  flex: none;
+  display: inline-block;
+  margin: 16px auto 0;
+  padding: 10px 20px;
+  font-size: 14px;
+}
 
 .banner {
   background: var(--warn-soft);
@@ -1705,7 +1678,7 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
 
 /* ---------- Small screens ---------- */
 @media (min-width: 480px) {
-  .status-cards { grid-template-columns: repeat(3, 1fr); }
+  .status-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 }
 
 /* ---------- Mobile (< 768px): stack value filter chips ---------- */
@@ -1732,13 +1705,12 @@ input[readonly] { background: var(--surface-2); color: var(--muted); }
   .modal-head { border-radius: 22px 22px 0 0; }
   .modal-small { max-width: 460px; }
   .about-block { align-items: flex-start; }
-  .status-card { padding: 18px; }
 }
 
 /* ---------- Desktop (>= 1024px) ---------- */
 @media (min-width: 1024px) {
   main { max-width: 1040px; }
-  .status-cards { grid-template-columns: repeat(4, 1fr); }
+  .status-list { grid-template-columns: repeat(3, 1fr); }
   .task-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
   .org-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .form-grid { grid-template-columns: 1fr 1fr 1fr; }

@@ -66,17 +66,19 @@ Clearing both URLs in Settings switches the app to **demo mode** (sample data).
 ## Features
 
 - **Responsive layout** - mobile-first, with dedicated breakpoints so the app adapts to
-  **tablets (>= 768px)** and **desktop (>= 1024px)**: wider content column, status cards in up
-  to 4 columns, task and organisation lists in 2 columns, the task form in 3 columns, the
+  **tablets (>= 768px)** and **desktop (>= 1024px)**: wider content column, the status list in
+  up to 3 columns, task and organisation lists in 2 columns, the task form in 3 columns, the
   Settings page in a 2-column grid, a centered (content-width) bottom nav, and a centered modal
   with full rounded corners on larger screens.
-- **Dashboard** - total task count plus per-status counts (cards + distribution bars).
-  The hero also shows the **Total Amount** (SUM of the `Value` column) on the right side
-  in a smaller font with a "Total Amount" label below it. Each status card shows its own
-  SUM of `Value` on the right, in a smaller bold, underlined font colored to match the status.
-  Tap a status card/bar to jump straight to the filtered task list.
+- **Dashboard** - total task count plus per-status counts. The hero also shows the
+  **Total Value** (SUM of the `Value` column, in **IDR**) on the right side in a smaller
+  font with a "Total Value" label below it. A single **Status Distribution** list merges the
+  per-status count, that status's SUM of `Value`, and a share-of-total bar into one tappable
+  row (statuses with no value hide the amount pill). Tap a row to jump straight to the
+  filtered task list.
 - **Value Filter** - a **Filter** button on the dashboard opens filter chips for **Purpose**,
-  **PIC** and **Organization**; the **Total Value** (SUM of the `Value` column) updates live
+  **PIC** and **Organization**; the **Total Value** (SUM of the `Value` column, in **IDR**)
+  updates live
   based on the selected filters. The chip values are **dynamic**, pulled from the Google Sheet
   (merged from the sheet's dropdown options and the unique values actually present in the task
   data), so nothing is hard-coded.
@@ -396,6 +398,36 @@ flowchart TD
 ```
 
 ## Changelog
+
+### 2026-11-16 - UI/UX pass: totals clarity + merged status widget
+
+- **One label for the total**: the dashboard hero label now reads **Total Value** (was
+  "Total Amount"), matching the Value Filter block for the same figure, and both show an
+  **IDR** unit hint so the amount is unambiguous.
+- **Merged status widget**: the per-status cards grid and the separate "Status Distribution"
+  bars block are combined into one tappable list. Each row shows the status, its task count,
+  that status's SUM of `Value`, and a share-of-total bar - so the same status data is no
+  longer rendered twice on one screen.
+- **No zero pills**: a status with no value (`SUM = 0`) no longer shows a "0" amount pill.
+- Bumped `js/app.js` to `?v=76`, `css/styles.css` to `?v=56`, and `CACHE_NAME` to
+  `project-s-v36`.
+
+### 2026-11-16 - UI/UX pass: read-only affordances, empty state, contrast, a11y
+
+- **Read-only mode** (live sheet without the Apps Script backend) no longer shows write controls
+  that cannot work: the FAB is hidden, and task/organization rows show a non-interactive
+  **View only** chip instead of Edit / Delete. The **Add** button on Organizations is hidden too.
+  Demo mode keeps its write controls (it edits in-memory sample data).
+- The Tasks **empty state** is now context-aware: a search/filter that matches nothing shows
+  "No tasks match your filters" with a **Clear filters** button, while a genuinely empty sheet
+  shows the add-first-task copy.
+- **Contrast**: status value pills and task status badges now use the darker per-status `fg`
+  tone instead of the light `card` colour, meeting the 4.5:1 minimum (e.g. In-Progress was
+  2.15:1).
+- **Accessibility**: the dashboard status cards and Status Distribution bars are now real
+  `<button>` elements with `aria-label`s, so they are reachable and operable by keyboard.
+- Bumped `js/app.js` to `?v=75`, `css/styles.css` to `?v=55`, and `CACHE_NAME` to
+  `project-s-v35`.
 
 ### 2026-10-28 - Restore backup pagination
 

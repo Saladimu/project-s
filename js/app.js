@@ -78,7 +78,6 @@
         dashTotal: document.getElementById('dashTotal'),
         dashAmount: document.getElementById('dashAmount'),
         statusCards: document.getElementById('statusCards'),
-        statusBars: document.getElementById('statusBars'),
         valueFilterToggle: document.getElementById('valueFilterToggle'),
         valueFilterPanel: document.getElementById('valueFilterPanel'),
         valueSum: document.getElementById('valueSum'),
@@ -93,11 +92,15 @@
         internalFilter: document.getElementById('internalFilter'),
         taskList: document.getElementById('taskList'),
         emptyState: document.getElementById('emptyState'),
+        emptyTitle: document.getElementById('emptyTitle'),
+        emptySub: document.getElementById('emptySub'),
+        emptyReset: document.getElementById('emptyReset'),
         demoBanner: document.getElementById('demoBanner'),
         orgSearch: document.getElementById('orgSearch'),
         addOrgBtn: document.getElementById('addOrgBtn'),
         orgList: document.getElementById('orgList'),
         orgEmpty: document.getElementById('orgEmpty'),
+        orgEmptySub: document.getElementById('orgEmptySub'),
         sheetUrl: document.getElementById('sheetUrl'),
         apiUrl: document.getElementById('apiUrl'),
         connBlock: document.getElementById('connBlock'),
@@ -290,6 +293,8 @@
 
       this.els.fab.addEventListener('click', function () { self.openForm(); });
 
+      this.els.emptyReset.addEventListener('click', function () { self.clearTaskFilters(); });
+
       var onTaskSearch = debounce(function () {
         self.state.search = self.els.searchInput.value.trim().toLowerCase();
         self.renderTasks();
@@ -451,7 +456,7 @@
       document.querySelectorAll('.nav-item').forEach(function (b) {
         b.classList.toggle('active', b.getAttribute('data-view') === name);
       });
-      this.els.fab.classList.toggle('hidden', name === 'settings' || name === 'organizations');
+      this.updateFabVisibility();
       if (name === 'settings') this.startSettingsIdleWatch();
       else this.stopSettingsIdleWatch();
       if (name === 'dashboard') this.renderDashboard();
@@ -669,6 +674,7 @@
       this.renderTasks();
       this.renderOrganizations();
       this.styleStatusField();
+      this.updateFabVisibility();
     },
 
     renderBanner: function () {
@@ -695,6 +701,20 @@
         case 'read': return 'Connected: live sheet (view-only).';
         default: return 'Running in demo mode with sample data.';
       }
+    },
+
+    /* Hide the FAB whenever the current view or the connection mode makes it
+     * unusable, so users are not invited to tap a control that cannot work. */
+    updateFabVisibility: function () {
+      var view = this.state.currentView;
+      var onAddableView = view !== 'settings' && view !== 'organizations';
+      this.els.fab.classList.toggle('hidden', !(onAddableView && !this.isReadOnly()));
+    },
+
+    /* Read-only mode (live sheet, no Apps Script backend) rejects every write.
+     * Demo mode still accepts writes against its in-memory sample data. */
+    isReadOnly: function () {
+      return ProjectS.getMode() === 'read';
     },
 
     setConnDot: function () {
@@ -754,45 +774,32 @@
       var statusNames = this.state.options.status.length ? this.state.options.status.slice() : Object.keys(counts);
       var all = statusNames.concat(Object.keys(counts).filter(function (s) { return statusNames.indexOf(s) === -1; }));
 
-      var cardsHtml = '';
+      /* One merged widget replaces the old cards + "Status Distribution" bars,
+       * which both encoded the same status→count data. Each row is a button
+       * that filters the task list, and doubles as the distribution bar. Bars
+       * show each status as a share of the whole so the chart sums to ~100%.
+       * (Normalising to the largest category instead would paint every bar
+       * full when one status dominates.) */
+      var totalTasks = all.reduce(function (acc, s) { return acc + (counts[s] || 0); }, 0);
+      var denom = totalTasks || 1;
+      var rowsHtml = '';
       all.forEach(function (s) {
         var c = self.statusColor(s);
         var n = counts[s] || 0;
         var sv = sums[s] || 0;
-        cardsHtml += '<div class="status-card" data-status="' + escapeHtml(s) + '" style="--sc:' + c.card + '">' +
-          '<div class="sc-top"><div class="sc-count">' + n.toLocaleString() + '</div>' +
-          '<div class="sc-value" style="background:' + c.card + ';color:#fff">' + self.formatValue(sv) + '</div></div>' +
-          '<div class="sc-label"><svg class="icon sc-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></div>' +
-          '<div class="sc-go">' + svgIcon('view') + '<span>Tap to view</span></div>' +
-          '</div>';
-      });
-      this.els.statusCards.innerHTML = cardsHtml;
-
-      this.els.statusCards.querySelectorAll('.status-card').forEach(function (card) {
-        card.addEventListener('click', function () {
-          self.applyStatusFilter(card.getAttribute('data-status'));
-        });
-      });
-
-      var barsHtml = '';
-      /* Bars show each status as a share of the whole, so the chart always
-       * sums to ~100% and reads as a real distribution. (Normalising to the
-       * largest category instead would paint every bar full when one status
-       * dominates.) */
-      var totalTasks = all.reduce(function (acc, s) { return acc + (counts[s] || 0); }, 0);
-      var denom = totalTasks || 1;
-      all.forEach(function (s) {
-        var c = self.statusColor(s);
-        var n = counts[s] || 0;
         var pct = Math.round((n / denom) * 100);
-        barsHtml += '<div class="sb-row" data-status="' + escapeHtml(s) + '" style="--sc:' + c.bar + '">' +
-          '<div class="sb-label"><svg class="icon sb-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></div>' +
-          '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%"></div></div>' +
-          '<div class="sb-count">' + n.toLocaleString() + '</div></div>';
+        var valuePill = sv ? '<span class="sc-value" style="background:' + c.fg + ';color:#fff">' + self.formatValue(sv) + '</span>' : '';
+        rowsHtml += '<button type="button" class="status-row" data-status="' + escapeHtml(s) + '" style="--sc:' + c.card + '" aria-label="View ' + escapeHtml(s) + ' tasks (' + n.toLocaleString() + ')">' +
+          '<span class="sr-head">' +
+            '<span class="sr-label"><svg class="icon sr-icon" aria-hidden="true"><use href="#' + self.statusIcon(s) + '"/></svg><span>' + escapeHtml(s) + '</span></span>' +
+            '<span class="sr-figures"><span class="sr-count">' + n.toLocaleString() + '</span>' + valuePill + '</span>' +
+          '</span>' +
+          '<span class="sr-track"><span class="sr-fill" style="width:' + pct + '%"></span></span>' +
+          '</button>';
       });
-      this.els.statusBars.innerHTML = barsHtml;
+      this.els.statusCards.innerHTML = rowsHtml;
 
-      this.els.statusBars.querySelectorAll('.sb-row').forEach(function (row) {
+      this.els.statusCards.querySelectorAll('.status-row').forEach(function (row) {
         row.addEventListener('click', function () {
           self.applyStatusFilter(row.getAttribute('data-status'));
         });
@@ -1052,9 +1059,35 @@
       });
 
       this.els.emptyState.classList.toggle('hidden', filtered.length > 0);
+      if (!filtered.length) this.renderEmptyState();
       this.els.taskList.innerHTML = filtered.map(function (t) {
         return self.taskCard(t, relMap[t.row] || '');
       }).join('');
+    },
+
+    /* Distinguish "nothing matches the current search/filter" from "the sheet
+     * has no tasks yet" so the empty state suggests the right next action. */
+    renderEmptyState: function () {
+      var narrowing = this.state.filter !== 'All' || this.state.internalFilter !== 'all' || !!this.state.search;
+      var writable = ProjectS.canWrite();
+      if (narrowing) {
+        this.els.emptyTitle.textContent = 'No tasks match your filters';
+        this.els.emptySub.textContent = 'Try a different search or clear the filters.';
+        this.els.emptyReset.classList.remove('hidden');
+      } else {
+        this.els.emptyTitle.textContent = 'No tasks yet';
+        this.els.emptySub.textContent = writable ? 'Tap + to add a new task.' : 'Add tasks in the Google Sheet to see them here.';
+        this.els.emptyReset.classList.add('hidden');
+      }
+    },
+
+    clearTaskFilters: function () {
+      this.state.filter = 'All';
+      this.state.internalFilter = 'all';
+      this.state.search = '';
+      if (this.els.searchInput) this.els.searchInput.value = '';
+      this.els.filterChips.classList.add('hidden');
+      this.renderTasks();
     },
 
     taskCard: function (t, relClass) {
@@ -1068,6 +1101,18 @@
       var internal = t.Internal ? '<span class="task-foot-internal">' + metaTag('internal', 'Internal') + '</span>' : '';
       var duration = t.Duration ? durationTag(t.Duration) : '';
       var relClassAttr = relClass ? ' ' + relClass : '';
+      var readOnly = this.isReadOnly();
+
+      var actions = readOnly
+        ? '<div class="task-actions task-actions-readonly">' +
+            '<span class="row-btn readonly-hint">' + svgIcon('lock') + 'View only</span>' +
+            internal +
+          '</div>'
+        : '<div class="task-actions">' +
+            '<button class="row-btn edit" data-row="' + t.row + '">' + svgIcon('pencil') + 'Edit</button>' +
+            '<button class="row-btn del" data-row="' + t.row + '">' + svgIcon('trash') + 'Delete</button>' +
+            internal +
+          '</div>';
 
       return '<div class="task-card' + relClassAttr + '" data-task-id="' + escapeHtml(t['Task-ID'] || '') + '" data-row="' + t.row + '" style="--sc:' + c.card + ';--sc-bg:' + c.bg + '">' +
         '<div class="task-main">' +
@@ -1077,7 +1122,7 @@
           '</div>' +
           '<div class="task-right">' +
             (value ? '<span class="task-value">' + value + '</span>' : '') +
-            '<span class="badge" style="--sc:' + c.card + ';--badge-fg:#fff"><span class="badge-dot"></span>' + escapeHtml(t.Status || '') + '</span>' +
+            '<span class="badge" style="--sc:' + c.fg + ';--badge-fg:#fff"><span class="badge-dot"></span>' + escapeHtml(t.Status || '') + '</span>' +
           '</div>' +
         '</div>' +
         '<div class="task-meta">' +
@@ -1086,11 +1131,7 @@
           metaTag('tag', t.Purpose) +
           duration + relate + note +
         '</div>' +
-        '<div class="task-actions">' +
-          '<button class="row-btn edit" data-row="' + t.row + '">' + svgIcon('pencil') + 'Edit</button>' +
-          '<button class="row-btn del" data-row="' + t.row + '">' + svgIcon('trash') + 'Delete</button>' +
-          internal +
-        '</div>' +
+        actions +
       '</div>';
     },
 
@@ -1114,6 +1155,11 @@
 
       this.els.orgEmpty.classList.toggle('hidden', list.length > 0);
 
+      var readOnly = this.isReadOnly();
+      this.els.orgEmptySub.textContent = readOnly
+        ? 'Add organisations in the Google Sheet to see them here.'
+        : 'Tap Add to create one.';
+
       var html = list.map(function (o) {
         var initial = (o.Name || '?').trim().charAt(0).toUpperCase();
         var desc = String(o.Description || '').trim();
@@ -1126,13 +1172,16 @@
               (desc ? '<div class="org-desc">' + escapeHtml(desc) + '</div>' : '') +
             '</div>' +
           '</div>' +
-          '<div class="org-actions">' +
-            '<button class="row-btn edit" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '" data-desc="' + escapeHtml(o.Description || '') + '">' + svgIcon('pencil') + 'Edit</button>' +
-            '<button class="row-btn del" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '">' + svgIcon('trash') + 'Delete</button>' +
-          '</div>' +
+          (readOnly
+            ? '<div class="org-actions org-actions-readonly"><span class="row-btn readonly-hint">' + svgIcon('lock') + 'View only</span></div>'
+            : '<div class="org-actions">' +
+                '<button class="row-btn edit" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '" data-desc="' + escapeHtml(o.Description || '') + '">' + svgIcon('pencil') + 'Edit</button>' +
+                '<button class="row-btn del" data-row="' + o.row + '" data-name="' + escapeHtml(o.Name) + '">' + svgIcon('trash') + 'Delete</button>' +
+              '</div>') +
         '</div>';
       }).join('');
       this.els.orgList.innerHTML = html;
+      this.els.addOrgBtn.classList.toggle('hidden', readOnly);
     },
 
     applyOrgNameLock: function (inUseCount) {
@@ -2092,7 +2141,8 @@
       trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
       backup: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
       arrow: '<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
-      view: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+      view: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+      lock: '<path d="M6 10V8a6 6 0 1 1 12 0v2M5 10h14v10H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
     };
     return '<svg class="icon" viewBox="0 0 24 24">' + (paths[name] || '') + '</svg>';
   }
